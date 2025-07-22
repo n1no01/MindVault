@@ -12,7 +12,7 @@ body{
   display: block;
   height: auto;
   margin: 0 auto;
-  width: 25%;
+  width: 20%;
 }
 
 #logo-dark{
@@ -30,6 +30,26 @@ body{
 #logout{
     display: none;
 }
+
+#welcome-message{
+  display: inline-block;
+  font-family: 'Patrick Hand', cursive;
+  padding-top: 80px;
+  font-size: 2.5rem;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  width: 0;
+  animation: typing 3s steps(40, end) forwards, blink 0.7s step-end infinite;
+}
+  @keyframes typing {
+      from { width: 0 }
+      to { width: 100% }
+    }
+
+    @keyframes blink {
+      50% { border-color: transparent }
+    }
 
 #notesWrapper{
     display: flex;
@@ -92,21 +112,12 @@ body{
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
-    
-
-    #firstNote{
-      width: 200px;
-      height: 200px;
-      display: block;
-      margin: auto;
-      background-color: red;
-    }
 
     #buttons {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-}
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
 
 
 #addNewNoteBtn {
@@ -130,6 +141,17 @@ body{
 #addNewNoteBtn:hover {
   background-color: #333;
 }
+
+body.dark-mode #addNewNoteBtn {
+  background-color: #444;
+  color: #e0e0e0;
+}
+
+body.dark-mode #addNewNoteBtn:hover {
+  background-color: #555;
+  color: #f0f0f0;
+}
+
 
 body.dark-mode {
   background-color: black;
@@ -204,12 +226,11 @@ body.dark-mode .toast {
 
 .note-container {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  /* Optional: add a subtle shadow for better effect */
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
 .note-container:hover {
   transform: scale(1.10);
   box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-  z-index: 10; /* Make sure hovered note stays on top */
+  z-index: 10;
 }

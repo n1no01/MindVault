@@ -1,29 +1,35 @@
 import { AuthClient } from "@dfinity/auth-client";
 import { createActor, canisterId, mindWault_backend } from "../../declarations/mindWault_backend";
-import { HttpAgent } from "@dfinity/agent";
+import { HttpAgent, Actor } from "@dfinity/agent";
+
+const phrases = [
+      `"Your thoughts belong here. Start capturing what matters."`,
+      `"Turn ideas into action — one note at a time."`,
+      `"Where your thoughts take shape."`,
+      `"Notes that remember what you shouldn't have to."`,
+      `"Organize the chaos. Start noting."`,
+      `"Your second brain starts here."`
+    ];
+
+  const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+  document.getElementById("welcome-message").textContent = randomPhrase;
 
 let authClient;
-
-// Initialize the authentication client
-async function initAuthClient() {
-  authClient = await AuthClient.create();
-  
-  // Check if the user is already authenticated
-  const isAuthenticated = await authClient.isAuthenticated();
-  if (isAuthenticated) {
-    handleAuthenticatedUser();
-  }
-}
+let actor;
 
 // Function to log in using Internet Identity
 async function login() {
+  authClient = await AuthClient.create();
   authClient.login({
-    identityProvider: "https://identity.ic0.app",
+    identityProvider: `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943/`,
     onSuccess: async () => {
-        handleAuthenticatedUser();
-        document.getElementById("login").style.display = "none";
-        document.getElementById("logout").style.display = "inline";
-        await loadAndRenderNotes();
+      const identity = await authClient.getIdentity();
+      const agent = new HttpAgent({identity});
+      actor = createActor(canisterId, { agent });
+      document.getElementById("login").style.display = "none";
+      document.getElementById("logout").style.display = "inline";
+      document.getElementById("welcome-message").textContent = "";
+      await loadAndRenderNotes();
     },
     onError: (err) => {
       console.error("Login failed:", err);
@@ -36,6 +42,7 @@ async function logout() {
     await authClient.logout();
     document.getElementById("login").style.display = "inline";
     document.getElementById("logout").style.display = "none";
+    document.getElementById("welcome-message").textContent = randomPhrase;
 
       // Clear and remove notes wrapper if exists
     const notesWrapper = document.getElementById("notesWrapper");
@@ -45,30 +52,9 @@ async function logout() {
     }
 }
 
-// Handle authenticated user
-async function handleAuthenticatedUser() {
-  const identity = authClient.getIdentity();
-  const principal = identity.getPrincipal().toText();
-}
-
-// Run authentication check on page load
-window.onload = initAuthClient;
-
 // Attach event listeners
 document.getElementById("login").addEventListener("click", login);
 document.getElementById("logout").addEventListener("click", logout);
-
-
-  // <div id="notesWrapper">
-  //   <div class="note-container">
-  //    <input type="text" id="note-title" placeholder="Note Title" />
-  //    <textarea id="note-content" placeholder="Write your note here..."></textarea>
-  //    <div id="buttons">
-  //      <button class="saveButton">Save Note</button>
-  //      <button class="deleteButton" onclick="deleteNote()">Delete Note</button>
-  //    </div>
-  //  </div>
-  // </div>
 
 
 async function loadAndRenderNotes() {
@@ -83,7 +69,7 @@ async function loadAndRenderNotes() {
 
   let notes = [];
   try {
-    notes = await mindWault_backend.getNotes();
+    notes = await actor.getNotes();
   } catch (e) {
     console.error("Failed to load notes:", e);
   }
@@ -96,7 +82,7 @@ async function loadAndRenderNotes() {
     const noteTitle = document.createElement('input');
     noteTitle.type = 'text';
     noteTitle.value = note.title;
-    noteTitle.readOnly = true;  // title is immutable in backend
+    noteTitle.readOnly = true; 
 
     const noteContent = document.createElement('textarea');
     noteContent.value = note.text;
@@ -122,7 +108,7 @@ async function loadAndRenderNotes() {
     }
 
     try {
-      await mindWault_backend.update(note.id, updatedContent, updatedTitle);
+      await actor.update(note.id, updatedContent, updatedTitle);
       noteTitle.readOnly = true;
       noteContent.readOnly = true;
       editButton.textContent = 'Edit';
@@ -145,7 +131,7 @@ async function loadAndRenderNotes() {
     deleteButton.textContent = 'Delete';
     deleteButton.onclick = async () => {
       try {
-        await mindWault_backend.delete(note.id);
+        await actor.delete(note.id);
         noteContainer.remove();
         showToast("Note deleted!");
       } catch (e) {
@@ -217,7 +203,7 @@ function createElement() {
     }
 
     try {
-      const newId = await mindWault_backend.create(titleVal, noteContent.value);
+      const newId = await actor.create(titleVal, noteContent.value);
       showToast("Note saved!");
 
       noteTitle.readOnly = true;
@@ -240,11 +226,11 @@ function createElement() {
           }
 
           try {
-            await mindWault_backend.update(newId, updatedContent, updatedTitle);
+            await actor.update(newId, updatedContent, updatedTitle);
             noteTitle.readOnly = true;
             noteContent.readOnly = true;
             saveButton.textContent = 'Edit';
-            alert('Note updated');
+            showToast("Note updated!");
           } catch (e) {
             console.error('Failed to update note:', e);
             alert("Update failed. See console.");
@@ -264,7 +250,7 @@ function createElement() {
       deleteButton.textContent = 'Delete';
       deleteButton.onclick = async () => {
         try {
-          await mindWault_backend.delete(newId);
+          await actor.delete(newId);
           noteContainer.remove();
           showToast("Note deleted!");
         } catch (e) {
@@ -333,3 +319,4 @@ function showToast(message) {
     setTimeout(() => toast.remove(), 300);
   }, 2500);
 }
+

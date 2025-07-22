@@ -43,7 +43,7 @@ actor {
 
   // Get all notes for the caller
   public shared({caller}) func getNotes() : async [Note] {
-    switch (notesByUser.get(caller)) {
+   return switch (notesByUser.get(caller)) {
       case (?n) n;
       case null [];
     }
@@ -69,5 +69,9 @@ actor {
     };
     let filteredNotes = Array.filter<Note>(userNotes, func(note) { note.id != noteId });
     notesByUser.put(caller, filteredNotes);
+  };
+
+  public shared query ({caller}) func whoami() : async Text {
+    return Principal.toText(caller);
   };
 }
