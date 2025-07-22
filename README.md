@@ -1,8 +1,14 @@
 # `mindWault`
 
-Welcome to your new `mindWault` project and to the Internet Computer development community. By default, creating a new project adds this README and some template files to your project directory. You can edit these template files to customize your project and to include your own code to speed up the development cycle.
+MindVault is a simple note-taking app built fully on-chain. It lets you create, edit, and delete text notes — all stored on the blockchain. You log in using Internet Identity, so there’s no need for traditional usernames or passwords.
 
-To get started, you might want to explore the project directory structure and the default configuration file. Working with this project in your development environment will not affect any production deployment or identity tokens.
+Features:
+  - Write Notes – Add new text notes
+  - Edit Notes – Update your existing notes
+  - Delete Notes – Remove notes when you no longer need them
+  - Login with Internet Identity – Secure and easy authentication
+
+All data is stored on-chain, so your notes are not stored on any centralized server.
 
 To learn more before you start working with `mindWault`, see the following documentation available online:
 
