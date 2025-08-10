@@ -185,52 +185,107 @@ body.dark-mode button:hover {
   color: black;
 }
 
-#darkModeImg {
-  width: 40px;
-  height: 40px;
+/* Hamburger Menu and Dropdown Styles */
+
+nav {
+  position: relative;
+}
+
+#menu {
+  font-size: 28px;
   cursor: pointer;
-  margin: 10px;
+  user-select: none;
+  position: relative;
+  padding: 10px;
+  display: inline-block;
+}
+
+#dropdown-menu {
   position: absolute;
-  top: 10px;
-  right: 10px;
-}
-
-.toast {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #333;
-  color: white;
-  padding: 12px 24px;
+  top: 40px;
+  left: 0;
+  background: white;
   border-radius: 8px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  z-index: 9999;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  width: 150px;
+  z-index: 1000;
+  transition: opacity 0.3s ease;
+}
+
+body.dark-mode #dropdown-menu {
+  background: #1e1e1e;
+  box-shadow: 0 8px 20px rgba(255,255,255,0.1);
+}
+
+#dropdown-menu.hidden {
+  display: none;
+}
+
+#dropdown-menu button {
+  background: none;
+  border: none;
+  padding: 12px 20px;
+  text-align: left;
+  cursor: pointer;
   font-size: 16px;
+  border-bottom: 1px solid #ddd;
+  transition: background-color 0.2s ease;
+  color: black;
 }
 
-.toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-  pointer-events: auto;
+body.dark-mode #dropdown-menu button {
+  color: #e0e0e0;
+  border-bottom: 1px solid #444;
 }
 
-body.dark-mode .toast {
-  background: #f5f5f5;
-  color: #111;
-  box-shadow: 0 4px 10px rgba(255, 255, 255, 0.1);
+#dropdown-menu button:last-child {
+  border-bottom: none;
 }
 
-
-.note-container {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+#dropdown-menu button:hover {
+  background-color: #f0f0f0;
 }
 
-.note-container:hover {
-  transform: scale(1.10);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-  z-index: 10;
+body.dark-mode #dropdown-menu button:hover {
+  background-color: #333;
+}
+
+@media screen and (max-width: 600px) {
+  #logo-light, #logo-dark {
+    display: block;
+    height: auto;
+    margin: 0 auto;
+    width: 30%;
+  } 
+
+  #welcome-message{
+    display: inline-block;
+    font-size: 1.3rem;
+  }
+
+  .note-container {
+    border-radius: 12px;
+    padding: 24px;
+    width: 70%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .note-container textarea {
+      font-size: 12px;
+  }
+
+  #addNewNoteBtn {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    width: 50px;
+    height: 50px;
+    font-size: 25px;
+    line-height: 0;
+  }
 }

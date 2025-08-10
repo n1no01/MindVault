@@ -4,21 +4,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MindWault</title>
+  <title>MindVault</title>
+  <link rel="shortcut icon" href="./assets/favicon.ico" type="image/x-icon">
   <link rel="stylesheet" href="./style.css">
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
 </head>
 
 <body>
-  <img id="logo-light" src="./assets/mindvault-light.png" alt="">
-  <img id="logo-dark" src="./assets/mindvault-dark.png" alt="">
-  <img id="darkModeImg" src="./assets/dark-mode.png" alt="Toggle Dark Mode" />
-  <button id="login">Login</button>
-  <button id="logout">Logout</button>
+  <nav>
+    <div id="menu">︙</div>
+
+    <img id="logo-light" src="./assets/mindvault-light.png" alt="">
+    <img id="logo-dark" src="./assets/mindvault-dark.png" alt="">
+    <button id="login">Login</button>
+    <!-- Removed individual darkModeImg, login, logout buttons, now handled in dropdown -->
+    <div id="dropdown-menu" class="hidden">
+      <button id="dropdown-darkmode-toggle">Toggle Dark Mode</button>
+      <button id="dropdown-logout">Logout</button>
+    </div>
+  </nav>
+
   <br>
   <h1 id="welcome-message"></h1>
 
   <script type="module" src="src/main.js"></script>
+  <script type="module" src="src/features.js"></script>
 </body>
 
 </html>

@@ -5,7 +5,7 @@ import Text "mo:base/Text";
 import Iter "mo:base/Iter";
 import Array "mo:base/Array";
 
-actor {
+persistent actor {
   public type Note = {
     id : Nat;
     title : Text;
@@ -14,7 +14,7 @@ actor {
 
   // Map: Principal -> [Note]
   stable var notesByUserEntries : [(Principal, [Note])] = [];
-  var notesByUser = HashMap.HashMap<Principal, [Note]>(0, Principal.equal, Principal.hash);
+  transient var notesByUser = HashMap.HashMap<Principal, [Note]>(0, Principal.equal, Principal.hash);
 
   // Global note id counter
   stable var counter : Nat = 0;
