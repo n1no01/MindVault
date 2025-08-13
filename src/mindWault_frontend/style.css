@@ -113,9 +113,9 @@ body{
       transition: background-color 0.3s ease;
     }
 
-    #buttons {
+    .buttons {
       display: flex;
-      gap: 10px;
+      gap: 20px;
       justify-content: center;
     }
 
@@ -185,72 +185,127 @@ body.dark-mode button:hover {
   color: black;
 }
 
-/* Hamburger Menu and Dropdown Styles */
-
-nav {
-  position: relative;
+#darkModeImg {
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  margin: 10px;
+  position: absolute;
+  top: 10px;
+  right: 10px;
 }
 
-#menu {
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 9999;
+  font-size: 16px;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+body.dark-mode .toast {
+  background: #f5f5f5;
+  color: #111;
+  box-shadow: 0 4px 10px rgba(255, 255, 255, 0.1);
+}
+
+
+.note-container {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.note-container:hover {
+  transform: scale(1.10);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  z-index: 10;
+}
+
+.drag-ghost {
+  opacity: 0.5;
+  background-color: #ddd;
+}
+
+.burger-menu {
+  position: absolute;
+  top: 10px;
+  right: 10px;
   font-size: 28px;
   cursor: pointer;
-  user-select: none;
-  position: relative;
-  padding: 10px;
-  display: inline-block;
+  z-index: 1000;
 }
 
-#dropdown-menu {
+.dropdown {
   position: absolute;
   top: 40px;
-  left: 0;
-  background: white;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ccc;
   border-radius: 8px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
-  width: 150px;
-  z-index: 1000;
-  transition: opacity 0.3s ease;
+  min-width: 140px;
+  overflow: hidden;
 }
 
-body.dark-mode #dropdown-menu {
-  background: #1e1e1e;
-  box-shadow: 0 8px 20px rgba(255,255,255,0.1);
-}
-
-#dropdown-menu.hidden {
-  display: none;
-}
-
-#dropdown-menu button {
+.dropdown button {
   background: none;
   border: none;
-  padding: 12px 20px;
+  padding: 10px;
   text-align: left;
   cursor: pointer;
-  font-size: 16px;
-  border-bottom: 1px solid #ddd;
-  transition: background-color 0.2s ease;
-  color: black;
+  font-size: 14px;
 }
 
-body.dark-mode #dropdown-menu button {
-  color: #e0e0e0;
-  border-bottom: 1px solid #444;
-}
-
-#dropdown-menu button:last-child {
-  border-bottom: none;
-}
-
-#dropdown-menu button:hover {
+.dropdown button:hover {
   background-color: #f0f0f0;
 }
 
-body.dark-mode #dropdown-menu button:hover {
+.hidden {
+  display: none;
+}
+
+body.dark-mode .dropdown {
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+}
+
+body.dark-mode .dropdown button:hover {
   background-color: #333;
 }
+
+/* Dark mode dropdown */
+body.dark-mode .dropdown {
+  background-color: #1e1e1e;
+}
+
+/* Make text inside dropdown buttons readable */
+body.dark-mode .dropdown button {
+  color: #e0e0e0; /* light text */
+}
+
+/* Hover effect in dark mode */
+body.dark-mode .dropdown button:hover {
+  background-color: #333;
+  color: white; /* ensure hover text is visible */
+}
+
+
 
 @media screen and (max-width: 600px) {
   #logo-light, #logo-dark {
@@ -288,4 +343,6 @@ body.dark-mode #dropdown-menu button:hover {
     font-size: 25px;
     line-height: 0;
   }
+
+
 }
