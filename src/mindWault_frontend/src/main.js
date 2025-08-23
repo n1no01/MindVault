@@ -1,7 +1,7 @@
 import { AuthClient } from "@dfinity/auth-client";
 import { createActor, canisterId } from "../../declarations/mindWault_backend";
 import { HttpAgent } from "@dfinity/agent";
-import { showToast } from "./features.js";
+import { showToast, enableNotesSearch } from "./features.js";
 
 const phrases = [
   "Your thoughts belong here. Start capturing what matters.",
@@ -55,27 +55,28 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 
   // ----------------- DARK MODE -----------------
-  let isDarkMode = localStorage.getItem("dark-mode") === "true";
-  function applyDarkMode(dark) {
-    document.body.classList.toggle("dark-mode", dark);
-    localStorage.setItem("dark-mode", dark);
-    if (logoLight && logoDark) {
-      logoLight.style.display = dark ? "none" : "block";
-      logoDark.style.display = dark ? "block" : "none";
-    }
-  }
+let isDarkMode = localStorage.getItem("dark-mode") === "true";
+
+function applyDarkMode(dark) {
+  document.body.classList.toggle("dark-mode", dark);
+  document.body.classList.toggle("light-mode", !dark);
+  localStorage.setItem("dark-mode", dark);
+}
+
+// Apply immediately on load
+applyDarkMode(isDarkMode);
+
+darkModeButton?.addEventListener("click", () => {
+  isDarkMode = !isDarkMode;
   applyDarkMode(isDarkMode);
+});
 
-  darkModeButton?.addEventListener("click", () => {
-    isDarkMode = !isDarkMode;
-    applyDarkMode(isDarkMode);
-  });
+darkModeToggle?.addEventListener("click", () => {
+  isDarkMode = !isDarkMode;
+  applyDarkMode(isDarkMode);
+  dropdownMenu?.classList.add("hidden");
+});
 
-  darkModeToggle?.addEventListener("click", () => {
-    isDarkMode = !isDarkMode;
-    applyDarkMode(isDarkMode);
-    dropdownMenu?.classList.add("hidden");
-  });
 
   // ----------------- BURGER MENU -----------------
   burgerMenu?.addEventListener("click", (e) => {
@@ -98,12 +99,36 @@ window.addEventListener("DOMContentLoaded", async () => {
       document.body.appendChild(notesWrapper);
     } else notesWrapper.innerHTML = '';
 
+    let loading = document.createElement('div');
+    loading.id = 'loading';
+    loading.className = 'loading';
+    loading.textContent = 'Loading notes...';
+    notesWrapper.appendChild(loading);
+
+
     let notes = [];
     try {
       notes = await actor.getNotes();
     } catch (error) {
       console.error("Failed to load notes:", error);
     }
+
+    loading.remove();
+
+      // ---------- Create search bar ABOVE notesWrapper ----------
+  let searchBar = document.getElementById('notes-search');
+  if (!searchBar) {
+    searchBar = document.createElement('input');
+    searchBar.type = 'text';
+    searchBar.placeholder = 'Search notes...';
+    searchBar.id = 'notes-search';
+    searchBar.style.width = '50%';
+    searchBar.style.padding = '10px';
+    searchBar.style.margin = '10px auto';
+    searchBar.style.display = 'block';
+    document.body.insertBefore(searchBar, notesWrapper);
+  }
+  enableNotesSearch('notesWrapper', 'notes-search');
 
     notes.forEach(note => createNoteElement(note.id, note.title, note.text, notesWrapper));
 
@@ -246,7 +271,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   async function login() {
     authClient = await AuthClient.create();
     authClient.login({
-      identityProvider: "https://identity.ic0.app", //`http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943/`,
+      identityProvider: "https://identity.ic0.app", // `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943/`, 
       onSuccess: async () => {
         const identity = await authClient.getIdentity();
         const agent = new HttpAgent({ identity });
@@ -272,7 +297,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     const notesWrapper = document.getElementById("notesWrapper");
     if (notesWrapper) notesWrapper.remove();
-
+    document.getElementById("notes-search").remove();
     burgerMenu?.classList.add("hidden");
   }
 });
