@@ -44,7 +44,7 @@ persistent actor {
   // Get all notes for the caller
   public shared({caller}) func getNotes() : async [Note] {
    return switch (notesByUser.get(caller)) {
-      case (?n) n;
+      case (?n) Array.reverse(n);
       case null [];
     }
   };
@@ -68,10 +68,20 @@ persistent actor {
       case null return;
     };
     let filteredNotes = Array.filter<Note>(userNotes, func(note) { note.id != noteId });
-    notesByUser.put(caller, filteredNotes);
+    if (filteredNotes.size() == 0) {
+    // Remove the principal from the map if no notes remain
+      ignore notesByUser.remove(caller);
+    } else {
+      notesByUser.put(caller, filteredNotes);
+    };
   };
 
   public shared query ({caller}) func whoami() : async Text {
     return Principal.toText(caller);
   };
+
+  // Returns the number of users (principals) who have notes
+  public shared query func userCount() : async Nat {
+    notesByUser.size();
+  }
 }

@@ -24,8 +24,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   const darkModeToggle = document.getElementById("dropdown-darkmode-toggle");
   const dropdownLogout = document.getElementById("dropdown-logout");
   const darkModeButton = document.getElementById("darkModeImg");
-  const logoLight = document.getElementById("logo-light");
-  const logoDark = document.getElementById("logo-dark");
 
   welcomeMessage.textContent = phrases[Math.floor(Math.random() * phrases.length)];
 
@@ -265,7 +263,7 @@ darkModeToggle?.addEventListener("click", () => {
 
     buttonsDiv.appendChild(saveButton);
     noteContainer.append(noteTitle, noteContent, buttonsDiv);
-    notesWrapper.appendChild(noteContainer);
+    notesWrapper.prepend(noteContainer);
   }
 
   async function login() {
