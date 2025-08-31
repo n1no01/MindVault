@@ -25,6 +25,23 @@ body.dark-mode #logo-dark {
   display: block;
 }
 
+.note-container {
+  position: relative;
+  padding: 15px;
+  margin: 10px;
+  border-radius: 10px;
+  background-color: #fff;
+}
+
+.color-dropdown {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px;
+  font-size: 0.9em;
+  z-index: 10;
+}
+
 /* Auth buttons */
 #login,
 #logout {
@@ -316,7 +333,7 @@ body.dark-mode .toast {
 }
 
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 body.dark-mode .dropdown {

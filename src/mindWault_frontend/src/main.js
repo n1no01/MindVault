@@ -1,7 +1,7 @@
 import { AuthClient } from "@dfinity/auth-client";
 import { createActor, canisterId } from "../../declarations/mindWault_backend";
 import { HttpAgent } from "@dfinity/agent";
-import { showToast, enableNotesSearch } from "./features.js";
+import { showToast, enableNotesSearch, applyDarkMode, exportNotesAsText } from "./features.js";
 
 const phrases = [
   "Your thoughts belong here. Start capturing what matters.",
@@ -22,8 +22,8 @@ window.addEventListener("DOMContentLoaded", async () => {
   const burgerMenu = document.getElementById("burger-menu");
   const dropdownMenu = document.getElementById("dropdown-menu");
   const darkModeToggle = document.getElementById("dropdown-darkmode-toggle");
+  const exportNotesBtn = document.getElementById("dropdown-export-notes");
   const dropdownLogout = document.getElementById("dropdown-logout");
-  const darkModeButton = document.getElementById("darkModeImg");
 
   welcomeMessage.textContent = phrases[Math.floor(Math.random() * phrases.length)];
 
@@ -35,9 +35,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     const agent = new HttpAgent({ identity });
     actor = createActor(canisterId, { agent });
 
-    loginBtn.style.display = "none";
+    loginBtn.classList.add("hidden");
     burgerMenu?.classList.remove("hidden");
-    welcomeMessage.style.display = "none";
+    welcomeMessage.classList.add("hidden");
 
     await loadAndRenderNotes();
   } else {
@@ -52,27 +52,19 @@ window.addEventListener("DOMContentLoaded", async () => {
     dropdownMenu?.classList.add("hidden");
   });
 
-  // ----------------- DARK MODE -----------------
 let isDarkMode = localStorage.getItem("dark-mode") === "true";
-
-function applyDarkMode(dark) {
-  document.body.classList.toggle("dark-mode", dark);
-  document.body.classList.toggle("light-mode", !dark);
-  localStorage.setItem("dark-mode", dark);
-}
-
 // Apply immediately on load
 applyDarkMode(isDarkMode);
-
-darkModeButton?.addEventListener("click", () => {
-  isDarkMode = !isDarkMode;
-  applyDarkMode(isDarkMode);
-});
 
 darkModeToggle?.addEventListener("click", () => {
   isDarkMode = !isDarkMode;
   applyDarkMode(isDarkMode);
   dropdownMenu?.classList.add("hidden");
+});
+
+exportNotesBtn?.addEventListener("click", () => {
+  exportNotesAsText("notesWrapper");
+  showToast("Notes exported!");
 });
 
 
@@ -120,10 +112,6 @@ darkModeToggle?.addEventListener("click", () => {
     searchBar.type = 'text';
     searchBar.placeholder = 'Search notes...';
     searchBar.id = 'notes-search';
-    searchBar.style.width = '50%';
-    searchBar.style.padding = '10px';
-    searchBar.style.margin = '10px auto';
-    searchBar.style.display = 'block';
     document.body.insertBefore(searchBar, notesWrapper);
   }
   enableNotesSearch('notesWrapper', 'notes-search');
@@ -269,15 +257,15 @@ darkModeToggle?.addEventListener("click", () => {
   async function login() {
     authClient = await AuthClient.create();
     authClient.login({
-      identityProvider: "https://identity.ic0.app", // `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943/`, 
+      identityProvider: "https://identity.ic0.app", //`http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943/`,
       onSuccess: async () => {
         const identity = await authClient.getIdentity();
         const agent = new HttpAgent({ identity });
         actor = createActor(canisterId, { agent });
 
-        loginBtn.style.display = "none";
+        loginBtn.classList.add("hidden");
         burgerMenu?.classList.remove("hidden");
-        welcomeMessage.style.display = "none";
+        welcomeMessage.classList.add("hidden");
 
         await loadAndRenderNotes();
       },
@@ -289,9 +277,9 @@ darkModeToggle?.addEventListener("click", () => {
     if (!authClient) return;
     await authClient.logout();
 
-    loginBtn.style.display = "inline";
+    loginBtn.classList.remove("hidden");
     welcomeMessage.textContent = phrases[Math.floor(Math.random() * phrases.length)];
-    welcomeMessage.style.display = "inline-block";
+    welcomeMessage.classList.remove("hidden");
 
     const notesWrapper = document.getElementById("notesWrapper");
     if (notesWrapper) notesWrapper.remove();
