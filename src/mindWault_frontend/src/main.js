@@ -171,6 +171,7 @@ exportNotesBtn?.addEventListener("click", () => {
     const deleteButton = document.createElement('button');
     deleteButton.textContent = 'Delete';
     deleteButton.onclick = async () => {
+      if (!confirm("Are you sure you want to delete this note?")) return;
       try {
         await actor.delete(id);
         noteContainer.remove();
@@ -240,6 +241,7 @@ exportNotesBtn?.addEventListener("click", () => {
         deleteButton.textContent = 'Delete';
         deleteButton.onclick = async () => {
           try {
+            if (!confirm("Are you sure you want to delete this note?")) return;
             await actor.delete(newId);
             noteContainer.remove();
             showToast("Note deleted!");
@@ -257,7 +259,7 @@ exportNotesBtn?.addEventListener("click", () => {
   async function login() {
     authClient = await AuthClient.create();
     authClient.login({
-      identityProvider: "https://identity.ic0.app", //`http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943/`,
+      identityProvider: "https://identity.ic0.app", //`http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943/`, 
       onSuccess: async () => {
         const identity = await authClient.getIdentity();
         const agent = new HttpAgent({ identity });
