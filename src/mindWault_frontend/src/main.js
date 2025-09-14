@@ -19,13 +19,15 @@ window.addEventListener("DOMContentLoaded", async () => {
   // ----------------- INITIAL SETUP -----------------
   const welcomeMessage = document.getElementById("welcome-message");
   const loginBtn = document.getElementById("login");
+  const loginGoogleBtn = document.getElementById("login-google");
   const burgerMenu = document.getElementById("burger-menu");
   const dropdownMenu = document.getElementById("dropdown-menu");
   const darkModeToggle = document.getElementById("dropdown-darkmode-toggle");
   const exportNotesBtn = document.getElementById("dropdown-export-notes");
   const dropdownLogout = document.getElementById("dropdown-logout");
 
-  welcomeMessage.textContent = phrases[Math.floor(Math.random() * phrases.length)];
+  welcomeMessage.textContent =
+    phrases[Math.floor(Math.random() * phrases.length)];
 
   authClient = await AuthClient.create();
   const isAuthenticated = await authClient.isAuthenticated();
@@ -36,37 +38,65 @@ window.addEventListener("DOMContentLoaded", async () => {
     actor = createActor(canisterId, { agent });
 
     loginBtn.classList.add("hidden");
+    loginGoogleBtn.classList.add("hidden");
     burgerMenu?.classList.remove("hidden");
     welcomeMessage.classList.add("hidden");
 
     await loadAndRenderNotes();
   } else {
     loginBtn.style.display = "inline";
+    loginGoogleBtn.style.display = "inline";
     burgerMenu?.classList.add("hidden");
   }
 
   // ----------------- LOGIN / LOGOUT -----------------
-  loginBtn?.addEventListener("click", login);
+  async function handleLogin(identityProvider) {
+    authClient = await AuthClient.create();
+    authClient.login({
+      identityProvider,
+      onSuccess: async () => {
+        const identity = await authClient.getIdentity();
+        const agent = new HttpAgent({ identity });
+        actor = createActor(canisterId, { agent });
+
+        loginBtn.classList.add("hidden");
+        loginGoogleBtn.classList.add("hidden");
+        burgerMenu?.classList.remove("hidden");
+        welcomeMessage.classList.add("hidden");
+
+        await loadAndRenderNotes();
+      },
+      onError: (err) => console.error("Login failed:", err),
+    });
+  }
+
+  loginBtn?.addEventListener("click", () =>
+    handleLogin("https://identity.ic0.app")
+  );
+
+  loginGoogleBtn?.addEventListener("click", () =>
+    handleLogin("https://nfid.one/authenticate")
+  );
+
   dropdownLogout?.addEventListener("click", async () => {
     await logout();
     dropdownMenu?.classList.add("hidden");
   });
 
-let isDarkMode = localStorage.getItem("dark-mode") === "true";
-// Apply immediately on load
-applyDarkMode(isDarkMode);
-
-darkModeToggle?.addEventListener("click", () => {
-  isDarkMode = !isDarkMode;
+  // ----------------- DARK MODE -----------------
+  let isDarkMode = localStorage.getItem("dark-mode") === "true";
   applyDarkMode(isDarkMode);
-  dropdownMenu?.classList.add("hidden");
-});
 
-exportNotesBtn?.addEventListener("click", () => {
-  exportNotesAsText("notesWrapper");
-  showToast("Notes exported!");
-});
+  darkModeToggle?.addEventListener("click", () => {
+    isDarkMode = !isDarkMode;
+    applyDarkMode(isDarkMode);
+    dropdownMenu?.classList.add("hidden");
+  });
 
+  exportNotesBtn?.addEventListener("click", () => {
+    exportNotesAsText("notesWrapper");
+    showToast("Notes exported!");
+  });
 
   // ----------------- BURGER MENU -----------------
   burgerMenu?.addEventListener("click", (e) => {
@@ -75,26 +105,28 @@ exportNotesBtn?.addEventListener("click", () => {
   });
 
   document.addEventListener("click", (e) => {
-    if (!dropdownMenu?.contains(e.target) && !burgerMenu?.contains(e.target)) {
+    if (
+      !dropdownMenu?.contains(e.target) &&
+      !burgerMenu?.contains(e.target)
+    ) {
       dropdownMenu?.classList.add("hidden");
     }
   });
 
   // ----------------- NOTES -----------------
   async function loadAndRenderNotes() {
-    let notesWrapper = document.getElementById('notesWrapper');
+    let notesWrapper = document.getElementById("notesWrapper");
     if (!notesWrapper) {
-      notesWrapper = document.createElement('div');
-      notesWrapper.id = 'notesWrapper';
+      notesWrapper = document.createElement("div");
+      notesWrapper.id = "notesWrapper";
       document.body.appendChild(notesWrapper);
-    } else notesWrapper.innerHTML = '';
+    } else notesWrapper.innerHTML = "";
 
-    let loading = document.createElement('div');
-    loading.id = 'loading';
-    loading.className = 'loading';
-    loading.textContent = 'Loading notes...';
+    let loading = document.createElement("div");
+    loading.id = "loading";
+    loading.className = "loading";
+    loading.textContent = "Loading notes...";
     notesWrapper.appendChild(loading);
-
 
     let notes = [];
     try {
@@ -105,45 +137,47 @@ exportNotesBtn?.addEventListener("click", () => {
 
     loading.remove();
 
-      // ---------- Create search bar ABOVE notesWrapper ----------
-  let searchBar = document.getElementById('notes-search');
-  if (!searchBar) {
-    searchBar = document.createElement('input');
-    searchBar.type = 'text';
-    searchBar.placeholder = 'Search notes...';
-    searchBar.id = 'notes-search';
-    document.body.insertBefore(searchBar, notesWrapper);
-  }
-  enableNotesSearch('notesWrapper', 'notes-search');
+    // ---------- Create search bar ABOVE notesWrapper ----------
+    let searchBar = document.getElementById("notes-search");
+    if (!searchBar) {
+      searchBar = document.createElement("input");
+      searchBar.type = "text";
+      searchBar.placeholder = "Search notes...";
+      searchBar.id = "notes-search";
+      document.body.insertBefore(searchBar, notesWrapper);
+    }
+    enableNotesSearch("notesWrapper", "notes-search");
 
-    notes.forEach(note => createNoteElement(note.id, note.title, note.text, notesWrapper));
+    notes.forEach((note) =>
+      createNoteElement(note.id, note.title, note.text, notesWrapper)
+    );
 
-    const addNewNoteBtn = document.createElement('button');
-    addNewNoteBtn.id = 'addNewNoteBtn';
-    addNewNoteBtn.textContent = '+';
+    const addNewNoteBtn = document.createElement("button");
+    addNewNoteBtn.id = "addNewNoteBtn";
+    addNewNoteBtn.textContent = "+";
     addNewNoteBtn.onclick = () => createElement(notesWrapper);
     notesWrapper.appendChild(addNewNoteBtn);
   }
 
   function createNoteElement(id, title, text, container) {
-    const noteContainer = document.createElement('div');
-    noteContainer.className = 'note-container';
+    const noteContainer = document.createElement("div");
+    noteContainer.className = "note-container";
     noteContainer.dataset.id = id;
 
-    const noteTitle = document.createElement('input');
-    noteTitle.type = 'text';
+    const noteTitle = document.createElement("input");
+    noteTitle.type = "text";
     noteTitle.value = title;
     noteTitle.readOnly = true;
 
-    const noteContent = document.createElement('textarea');
+    const noteContent = document.createElement("textarea");
     noteContent.value = text;
     noteContent.readOnly = true;
 
-    const buttonsDiv = document.createElement('div');
-    buttonsDiv.className = 'buttons';
+    const buttonsDiv = document.createElement("div");
+    buttonsDiv.className = "buttons";
 
-    const editButton = document.createElement('button');
-    editButton.textContent = 'Edit';
+    const editButton = document.createElement("button");
+    editButton.textContent = "Edit";
     editButton.onclick = async () => {
       const isEditing = !noteContent.readOnly;
       if (isEditing) {
@@ -154,7 +188,7 @@ exportNotesBtn?.addEventListener("click", () => {
           await actor.update(id, updatedContent, updatedTitle);
           noteTitle.readOnly = true;
           noteContent.readOnly = true;
-          editButton.textContent = 'Edit';
+          editButton.textContent = "Edit";
           showToast("Note updated!");
         } catch (e) {
           console.error(e);
@@ -164,12 +198,12 @@ exportNotesBtn?.addEventListener("click", () => {
         noteTitle.readOnly = false;
         noteContent.readOnly = false;
         noteTitle.focus();
-        editButton.textContent = 'Save';
+        editButton.textContent = "Save";
       }
     };
 
-    const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'Delete';
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "Delete";
     deleteButton.onclick = async () => {
       if (!confirm("Are you sure you want to delete this note?")) return;
       try {
@@ -187,24 +221,27 @@ exportNotesBtn?.addEventListener("click", () => {
   }
 
   function createElement(notesWrapper) {
-    const hasUnsavedNote = [...notesWrapper.children].some(c => c.classList.contains('note-container') && !c.dataset.id);
-    if (hasUnsavedNote) return alert("Please save the current note before adding a new one.");
+    const hasUnsavedNote = [...notesWrapper.children].some(
+      (c) => c.classList.contains("note-container") && !c.dataset.id
+    );
+    if (hasUnsavedNote)
+      return alert("Please save the current note before adding a new one.");
 
-    const noteContainer = document.createElement('div');
-    noteContainer.className = 'note-container';
+    const noteContainer = document.createElement("div");
+    noteContainer.className = "note-container";
 
-    const noteTitle = document.createElement('input');
-    noteTitle.type = 'text';
-    noteTitle.placeholder = 'Note Title';
+    const noteTitle = document.createElement("input");
+    noteTitle.type = "text";
+    noteTitle.placeholder = "Note Title";
 
-    const noteContent = document.createElement('textarea');
-    noteContent.placeholder = 'Write your note here...';
+    const noteContent = document.createElement("textarea");
+    noteContent.placeholder = "Write your note here...";
 
-    const buttonsDiv = document.createElement('div');
-    buttonsDiv.className = 'buttons';
+    const buttonsDiv = document.createElement("div");
+    buttonsDiv.className = "buttons";
 
-    const saveButton = document.createElement('button');
-    saveButton.textContent = 'Save Note';
+    const saveButton = document.createElement("button");
+    saveButton.textContent = "Save Note";
     saveButton.onclick = async () => {
       const titleVal = noteTitle.value.trim();
       if (!titleVal) return alert("Please enter a note title.");
@@ -215,7 +252,7 @@ exportNotesBtn?.addEventListener("click", () => {
         noteTitle.readOnly = true;
         noteContent.readOnly = true;
         noteContainer.dataset.id = newId;
-        saveButton.textContent = 'Edit';
+        saveButton.textContent = "Edit";
         saveButton.onclick = async () => {
           const isEditing = !noteContent.readOnly;
           if (isEditing) {
@@ -226,29 +263,38 @@ exportNotesBtn?.addEventListener("click", () => {
               await actor.update(newId, updatedContent, updatedTitle);
               noteTitle.readOnly = true;
               noteContent.readOnly = true;
-              saveButton.textContent = 'Edit';
+              saveButton.textContent = "Edit";
               showToast("Note updated!");
-            } catch (e) { console.error(e); alert("Update failed."); }
+            } catch (e) {
+              console.error(e);
+              alert("Update failed.");
+            }
           } else {
             noteTitle.readOnly = false;
             noteContent.readOnly = false;
             noteTitle.focus();
-            saveButton.textContent = 'Save';
+            saveButton.textContent = "Save";
           }
         };
 
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Delete';
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "Delete";
         deleteButton.onclick = async () => {
           try {
-            if (!confirm("Are you sure you want to delete this note?")) return;
+            if (!confirm("Are you sure you want to delete this note?"))
+              return;
             await actor.delete(newId);
             noteContainer.remove();
             showToast("Note deleted!");
-          } catch (e) { console.error(e); }
+          } catch (e) {
+            console.error(e);
+          }
         };
         buttonsDiv.appendChild(deleteButton);
-      } catch (e) { console.error(e); alert("Failed to save note."); }
+      } catch (e) {
+        console.error(e);
+        alert("Failed to save note.");
+      }
     };
 
     buttonsDiv.appendChild(saveButton);
@@ -256,36 +302,19 @@ exportNotesBtn?.addEventListener("click", () => {
     notesWrapper.prepend(noteContainer);
   }
 
-  async function login() {
-    authClient = await AuthClient.create();
-    authClient.login({
-      identityProvider: "https://identity.ic0.app", //`http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943/`, 
-      onSuccess: async () => {
-        const identity = await authClient.getIdentity();
-        const agent = new HttpAgent({ identity });
-        actor = createActor(canisterId, { agent });
-
-        loginBtn.classList.add("hidden");
-        burgerMenu?.classList.remove("hidden");
-        welcomeMessage.classList.add("hidden");
-
-        await loadAndRenderNotes();
-      },
-      onError: (err) => console.error("Login failed:", err)
-    });
-  }
-
   async function logout() {
     if (!authClient) return;
     await authClient.logout();
 
     loginBtn.classList.remove("hidden");
-    welcomeMessage.textContent = phrases[Math.floor(Math.random() * phrases.length)];
+    loginGoogleBtn.classList.remove("hidden");
+    welcomeMessage.textContent =
+      phrases[Math.floor(Math.random() * phrases.length)];
     welcomeMessage.classList.remove("hidden");
 
     const notesWrapper = document.getElementById("notesWrapper");
     if (notesWrapper) notesWrapper.remove();
-    document.getElementById("notes-search").remove();
+    document.getElementById("notes-search")?.remove();
     burgerMenu?.classList.add("hidden");
   }
 });
