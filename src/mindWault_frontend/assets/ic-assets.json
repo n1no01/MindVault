@@ -2,5 +2,11 @@
   {
     "match": ".well-known",
     "ignore": false
-  }
+  },
+
+  { 
+    "match": ".well-known/ii-alternative-origins", 
+    "headers": { "Access-Control-Allow-Origin": "https://identity.internetcomputer.org", 
+    "Content-Type": "application/json" }, "ignore": false 
+  } 
 ]

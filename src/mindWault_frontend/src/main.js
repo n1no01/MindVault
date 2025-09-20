@@ -49,11 +49,13 @@ window.addEventListener("DOMContentLoaded", async () => {
     burgerMenu?.classList.add("hidden");
   }
 
+  const canonicalOrigin = "https://aucs2-4yaaa-aaaab-abqba-cai.icp0.io";
   // ----------------- LOGIN / LOGOUT -----------------
   async function handleLogin(identityProvider) {
     authClient = await AuthClient.create();
     authClient.login({
       identityProvider,
+      derivationOrigin: canonicalOrigin,
       onSuccess: async () => {
         const identity = await authClient.getIdentity();
         const agent = new HttpAgent({ identity });
