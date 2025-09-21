@@ -91,9 +91,7 @@ body.dark-mode #login-google {
 
 body.dark-mode #login:hover,
 body.dark-mode #login-google:hover {
-  background-color: #333;
-  border-color: #888;
-  box-shadow: 0 6px 12px rgba(255, 255, 255, 0.1);
+  
 }
 
 body.dark-mode #welcome-message {
