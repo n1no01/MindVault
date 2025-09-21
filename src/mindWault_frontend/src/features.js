@@ -64,3 +64,11 @@ export function exportNotesAsText(notesWrapperId) {
   URL.revokeObjectURL(url);
 }
 
+  // ----------------- SEARCH BAR TOGGLER -----------------
+  export function toggleSearchBarVisibility() {
+    const searchBar = document.getElementById("notes-search");
+    const noteCount = document.querySelectorAll(".note-container").length;
+    if (searchBar) {
+      searchBar.classList.toggle("hidden", noteCount < 2);
+    }
+  }

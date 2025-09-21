@@ -1,7 +1,7 @@
 import { AuthClient } from "@dfinity/auth-client";
 import { createActor, canisterId } from "../../declarations/mindWault_backend";
 import { HttpAgent } from "@dfinity/agent";
-import { showToast, enableNotesSearch, applyDarkMode, exportNotesAsText } from "./features.js";
+import { showToast, enableNotesSearch, applyDarkMode, exportNotesAsText, toggleSearchBarVisibility } from "./features.js";
 
 const phrases = [
   "Your thoughts belong here. Start capturing what matters.",
@@ -50,6 +50,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   }
 
   const canonicalOrigin = "https://aucs2-4yaaa-aaaab-abqba-cai.icp0.io";
+
   // ----------------- LOGIN / LOGOUT -----------------
   async function handleLogin(identityProvider) {
     authClient = await AuthClient.create();
@@ -115,6 +116,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
+
+
   // ----------------- NOTES -----------------
   async function loadAndRenderNotes() {
     let notesWrapper = document.getElementById("notesWrapper");
@@ -147,12 +150,14 @@ window.addEventListener("DOMContentLoaded", async () => {
       searchBar.placeholder = "Search notes...";
       searchBar.id = "notes-search";
       document.body.insertBefore(searchBar, notesWrapper);
+      enableNotesSearch("notesWrapper", "notes-search");
     }
-    enableNotesSearch("notesWrapper", "notes-search");
 
     notes.forEach((note) =>
       createNoteElement(note.id, note.title, note.text, notesWrapper)
     );
+
+    toggleSearchBarVisibility();
 
     const addNewNoteBtn = document.createElement("button");
     addNewNoteBtn.id = "addNewNoteBtn";
@@ -211,6 +216,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       try {
         await actor.delete(id);
         noteContainer.remove();
+        toggleSearchBarVisibility();
         showToast("Note deleted!");
       } catch (e) {
         console.error(e);
@@ -287,12 +293,15 @@ window.addEventListener("DOMContentLoaded", async () => {
               return;
             await actor.delete(newId);
             noteContainer.remove();
+            toggleSearchBarVisibility();
             showToast("Note deleted!");
           } catch (e) {
             console.error(e);
           }
         };
         buttonsDiv.appendChild(deleteButton);
+
+        toggleSearchBarVisibility();
       } catch (e) {
         console.error(e);
         alert("Failed to save note.");
