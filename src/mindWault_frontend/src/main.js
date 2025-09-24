@@ -14,9 +14,10 @@ const phrases = [
 
 let authClient;
 let actor;
+let principalId;
+const myWalletAccountId = "853bd374992baa60b4b5deadba7d3bb607e0e9bfc77e1fca91a94747de926c94"; // Mainnet account
 
 window.addEventListener("DOMContentLoaded", async () => {
-  // ----------------- INITIAL SETUP -----------------
   const welcomeMessage = document.getElementById("welcome-message");
   const loginBtn = document.getElementById("login");
   const loginGoogleBtn = document.getElementById("login-google");
@@ -25,15 +26,17 @@ window.addEventListener("DOMContentLoaded", async () => {
   const darkModeToggle = document.getElementById("dropdown-darkmode-toggle");
   const exportNotesBtn = document.getElementById("dropdown-export-notes");
   const dropdownLogout = document.getElementById("dropdown-logout");
+  const becomePremiumBtn = document.getElementById("become-premium");
 
-  welcomeMessage.textContent =
-    phrases[Math.floor(Math.random() * phrases.length)];
+  welcomeMessage.textContent = phrases[Math.floor(Math.random() * phrases.length)];
 
   authClient = await AuthClient.create();
   const isAuthenticated = await authClient.isAuthenticated();
 
   if (isAuthenticated) {
     const identity = await authClient.getIdentity();
+    principalId = identity.getPrincipal().toText();
+
     const agent = new HttpAgent({ identity });
     actor = createActor(canisterId, { agent });
 
@@ -43,22 +46,17 @@ window.addEventListener("DOMContentLoaded", async () => {
     welcomeMessage.classList.add("hidden");
 
     await loadAndRenderNotes();
-  } else {
-    loginBtn.style.display = "inline";
-    loginGoogleBtn.style.display = "inline";
-    burgerMenu?.classList.add("hidden");
+    await updatePremiumUI();
   }
 
-  const canonicalOrigin = "https://aucs2-4yaaa-aaaab-abqba-cai.icp0.io";
-
-  // ----------------- LOGIN / LOGOUT -----------------
   async function handleLogin(identityProvider) {
     authClient = await AuthClient.create();
     authClient.login({
       identityProvider,
-      derivationOrigin: canonicalOrigin,
       onSuccess: async () => {
         const identity = await authClient.getIdentity();
+        principalId = identity.getPrincipal().toText();
+
         const agent = new HttpAgent({ identity });
         actor = createActor(canisterId, { agent });
 
@@ -68,25 +66,20 @@ window.addEventListener("DOMContentLoaded", async () => {
         welcomeMessage.classList.add("hidden");
 
         await loadAndRenderNotes();
+        await updatePremiumUI();
       },
-      onError: (err) => console.error("Login failed:", err),
+      onError: (err) => alert("Login failed. See console for details."),
     });
   }
 
-  loginBtn?.addEventListener("click", () =>
-    handleLogin("https://identity.ic0.app")
-  );
-
-  loginGoogleBtn?.addEventListener("click", () =>
-    handleLogin("https://nfid.one/authenticate")
-  );
+  loginBtn?.addEventListener("click", () => handleLogin("https://identity.ic0.app"));
+  loginGoogleBtn?.addEventListener("click", () => handleLogin("https://nfid.one/authenticate"));
 
   dropdownLogout?.addEventListener("click", async () => {
     await logout();
     dropdownMenu?.classList.add("hidden");
   });
 
-  // ----------------- DARK MODE -----------------
   let isDarkMode = localStorage.getItem("dark-mode") === "true";
   applyDarkMode(isDarkMode);
 
@@ -101,24 +94,60 @@ window.addEventListener("DOMContentLoaded", async () => {
     showToast("Notes exported!");
   });
 
-  // ----------------- BURGER MENU -----------------
   burgerMenu?.addEventListener("click", (e) => {
     e.stopPropagation();
     dropdownMenu?.classList.toggle("hidden");
   });
 
   document.addEventListener("click", (e) => {
-    if (
-      !dropdownMenu?.contains(e.target) &&
-      !burgerMenu?.contains(e.target)
-    ) {
+    if (!dropdownMenu?.contains(e.target) && !burgerMenu?.contains(e.target)) {
       dropdownMenu?.classList.add("hidden");
     }
   });
 
+  becomePremiumBtn?.addEventListener("click", async () => {
+    if (!window.ic || !window.ic.plug) {
+      alert("Plug wallet is not installed!");
+      return;
+    }
 
+    try {
+      const connected = await window.ic.plug.requestConnect({
+        whitelist: [canisterId, "ryjl3-tyaaa-aaaaa-aaaba-cai"],
+      });
+      if (!connected) return;
 
-  // ----------------- NOTES -----------------
+      const transferResult = await window.ic.plug.requestTransfer({
+        to: myWalletAccountId,
+        amount: 100_000_000,
+        memo: 0,
+      });
+
+      if (transferResult && transferResult.height) {
+        await actor.addPremium();
+        showToast("You are now a premium member!");
+        becomePremiumBtn.disabled = true;
+        becomePremiumBtn.textContent = "💎 Premium User";
+      } else {
+        alert("Payment failed or canceled.");
+      }
+    } catch (err) {
+      alert("Payment failed. Check console for details.");
+    }
+  });
+
+  async function updatePremiumUI() {
+    if (!actor || !becomePremiumBtn) return;
+    const isPremium = await actor.isPremium();
+    if (isPremium) {
+      becomePremiumBtn.disabled = true;
+      becomePremiumBtn.textContent = "💎 Premium User";
+    } else {
+      becomePremiumBtn.disabled = false;
+      becomePremiumBtn.textContent = "💎 Buy Premium";
+    }
+  }
+
   async function loadAndRenderNotes() {
     let notesWrapper = document.getElementById("notesWrapper");
     if (!notesWrapper) {
@@ -127,7 +156,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       document.body.appendChild(notesWrapper);
     } else notesWrapper.innerHTML = "";
 
-    let loading = document.createElement("div");
+    const loading = document.createElement("div");
     loading.id = "loading";
     loading.className = "loading";
     loading.textContent = "Loading notes...";
@@ -137,12 +166,11 @@ window.addEventListener("DOMContentLoaded", async () => {
     try {
       notes = await actor.getNotes();
     } catch (error) {
-      console.error("Failed to load notes:", error);
+      alert("Failed to load notes.");
     }
 
     loading.remove();
 
-    // ---------- Create search bar ABOVE notesWrapper ----------
     let searchBar = document.getElementById("notes-search");
     if (!searchBar) {
       searchBar = document.createElement("input");
@@ -153,10 +181,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       enableNotesSearch("notesWrapper", "notes-search");
     }
 
-    notes.forEach((note) =>
-      createNoteElement(note.id, note.title, note.text, notesWrapper)
-    );
-
+    notes.forEach((note) => createNoteElement(note.id, note.title, note.text, notesWrapper));
     toggleSearchBarVisibility();
 
     const addNewNoteBtn = document.createElement("button");
@@ -197,9 +222,8 @@ window.addEventListener("DOMContentLoaded", async () => {
           noteContent.readOnly = true;
           editButton.textContent = "Edit";
           showToast("Note updated!");
-        } catch (e) {
-          console.error(e);
-          alert("Update failed. See console.");
+        } catch {
+          alert("Failed to update note.");
         }
       } else {
         noteTitle.readOnly = false;
@@ -218,8 +242,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         noteContainer.remove();
         toggleSearchBarVisibility();
         showToast("Note deleted!");
-      } catch (e) {
-        console.error(e);
+      } catch {
+        alert("Failed to delete note.");
       }
     };
 
@@ -232,8 +256,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     const hasUnsavedNote = [...notesWrapper.children].some(
       (c) => c.classList.contains("note-container") && !c.dataset.id
     );
-    if (hasUnsavedNote)
-      return alert("Please save the current note before adding a new one.");
+    if (hasUnsavedNote) return alert("Please save the current note before adding a new one.");
 
     const noteContainer = document.createElement("div");
     noteContainer.className = "note-container";
@@ -260,6 +283,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         noteTitle.readOnly = true;
         noteContent.readOnly = true;
         noteContainer.dataset.id = newId;
+
         saveButton.textContent = "Edit";
         saveButton.onclick = async () => {
           const isEditing = !noteContent.readOnly;
@@ -273,9 +297,8 @@ window.addEventListener("DOMContentLoaded", async () => {
               noteContent.readOnly = true;
               saveButton.textContent = "Edit";
               showToast("Note updated!");
-            } catch (e) {
-              console.error(e);
-              alert("Update failed.");
+            } catch {
+              alert("Failed to update note.");
             }
           } else {
             noteTitle.readOnly = false;
@@ -289,22 +312,19 @@ window.addEventListener("DOMContentLoaded", async () => {
         deleteButton.textContent = "Delete";
         deleteButton.onclick = async () => {
           try {
-            if (!confirm("Are you sure you want to delete this note?"))
-              return;
+            if (!confirm("Are you sure you want to delete this note?")) return;
             await actor.delete(newId);
             noteContainer.remove();
             toggleSearchBarVisibility();
             showToast("Note deleted!");
-          } catch (e) {
-            console.error(e);
+          } catch {
+            alert("Failed to delete note.");
           }
         };
         buttonsDiv.appendChild(deleteButton);
-
         toggleSearchBarVisibility();
-      } catch (e) {
-        console.error(e);
-        alert("Failed to save note.");
+      } catch {
+        alert("Failed to save note: You have reached the maximum number of notes allowed.");
       }
     };
 
@@ -319,8 +339,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     loginBtn.classList.remove("hidden");
     loginGoogleBtn.classList.remove("hidden");
-    welcomeMessage.textContent =
-      phrases[Math.floor(Math.random() * phrases.length)];
+    welcomeMessage.textContent = phrases[Math.floor(Math.random() * phrases.length)];
     welcomeMessage.classList.remove("hidden");
 
     const notesWrapper = document.getElementById("notesWrapper");

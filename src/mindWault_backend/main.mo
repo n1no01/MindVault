@@ -4,6 +4,7 @@ import Nat "mo:base/Nat";
 import Text "mo:base/Text";
 import Iter "mo:base/Iter";
 import Array "mo:base/Array";
+import Error "mo:base/Error";
 
 persistent actor {
   public type Note = {
@@ -16,17 +17,24 @@ persistent actor {
   stable var notesByUserEntries : [(Principal, [Note])] = [];
   transient var notesByUser = HashMap.HashMap<Principal, [Note]>(0, Principal.equal, Principal.hash);
 
+  // Map: Principal -> Bool (premium status)
+  stable var premiumUsersEntries : [(Principal, Bool)] = [];
+  transient var premiumUsers = HashMap.HashMap<Principal, Bool>(0, Principal.equal, Principal.hash);
+
+
   // Global note id counter
   stable var counter : Nat = 0;
 
   // Restore state after upgrade
   system func postupgrade() {
     notesByUser := HashMap.fromIter(notesByUserEntries.vals(), 0, Principal.equal, Principal.hash);
+    premiumUsers := HashMap.fromIter(premiumUsersEntries.vals(), 0, Principal.equal, Principal.hash);
   };
 
   // Save state before upgrade
   system func preupgrade() {
     notesByUserEntries := Iter.toArray(notesByUser.entries());
+    premiumUsersEntries := Iter.toArray(premiumUsers.entries());
   };
 
   // Create a new note
@@ -35,6 +43,16 @@ persistent actor {
       case (?n) n;
       case null [];
     };
+     // Limit notes based on premium status
+    let limit = switch (premiumUsers.get(caller)) {
+        case (?true) 100;
+        case null 20;
+    };
+
+     if (userNotes.size() >= limit) {
+       throw Error.reject("Note limit reached. Upgrade to premium to add more notes.");
+    };
+
     let note : Note = { id = counter; title = title; text = text };
     notesByUser.put(caller, Array.append(userNotes, [note]));
     counter += 1;
@@ -76,6 +94,20 @@ persistent actor {
     };
   };
 
+  // Check if a user is premium
+public shared query ({caller}) func isPremium() : async Bool {
+    switch (premiumUsers.get(caller)) {
+      case (?status) status;
+      case null false;
+    }
+};
+
+// Mark a user as premium (call after ICP payment)
+public shared({caller}) func addPremium() : async () {
+    premiumUsers.put(caller, true);
+};
+
+
   public shared query ({caller}) func whoami() : async Text {
     return Principal.toText(caller);
   };
@@ -83,5 +115,5 @@ persistent actor {
   // Returns the number of users (principals) who have notes
   public shared query func userCount() : async Nat {
     notesByUser.size();
-  }
+  };
 }
