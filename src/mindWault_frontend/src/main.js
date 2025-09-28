@@ -27,6 +27,8 @@ window.addEventListener("DOMContentLoaded", async () => {
   const exportNotesBtn = document.getElementById("dropdown-export-notes");
   const dropdownLogout = document.getElementById("dropdown-logout");
   const becomePremiumBtn = document.getElementById("become-premium");
+  const loginScreen = document.getElementById("login-screen");
+  const navbar = document.getElementById("navbar");
 
   welcomeMessage.textContent = phrases[Math.floor(Math.random() * phrases.length)];
 
@@ -40,13 +42,13 @@ window.addEventListener("DOMContentLoaded", async () => {
     const agent = new HttpAgent({ identity });
     actor = createActor(canisterId, { agent });
 
-    loginBtn.classList.add("hidden");
-    loginGoogleBtn.classList.add("hidden");
+    loginScreen?.classList.add("hidden");
+    navbar?.classList.remove("hidden");
     burgerMenu?.classList.remove("hidden");
-    welcomeMessage.classList.add("hidden");
 
-    await loadAndRenderNotes();
-    await updatePremiumUI();
+    // await loadAndRenderNotes();
+    // await updatePremiumUI();
+    await Promise.all([loadAndRenderNotes(), updatePremiumUI()]);
   }
 
   const canonicalOrigin = "https://aucs2-4yaaa-aaaab-abqba-cai.icp0.io";
@@ -62,10 +64,9 @@ window.addEventListener("DOMContentLoaded", async () => {
         const agent = new HttpAgent({ identity });
         actor = createActor(canisterId, { agent });
 
-        loginBtn.classList.add("hidden");
-        loginGoogleBtn.classList.add("hidden");
+        loginScreen?.classList.add("hidden");
+        navbar?.classList.remove("hidden");
         burgerMenu?.classList.remove("hidden");
-        welcomeMessage.classList.add("hidden");
 
         await loadAndRenderNotes();
         await updatePremiumUI();
@@ -108,6 +109,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 
   becomePremiumBtn?.addEventListener("click", async () => {
+    fetchPrices();
     if (!window.ic || !window.ic.plug) {
       alert("Plug wallet is not installed!");
       return;
@@ -172,16 +174,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     loading.remove();
-
-    let searchBar = document.getElementById("notes-search");
-    if (!searchBar) {
-      searchBar = document.createElement("input");
-      searchBar.type = "text";
-      searchBar.placeholder = "Search notes...";
-      searchBar.id = "notes-search";
-      document.body.insertBefore(searchBar, notesWrapper);
-      enableNotesSearch("notesWrapper", "notes-search");
-    }
+    enableNotesSearch("notesWrapper", "notes-search");
 
     notes.forEach((note) => createNoteElement(note.id, note.title, note.text, notesWrapper));
     toggleSearchBarVisibility();
@@ -339,14 +332,24 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (!authClient) return;
     await authClient.logout();
 
-    loginBtn.classList.remove("hidden");
-    loginGoogleBtn.classList.remove("hidden");
-    welcomeMessage.textContent = phrases[Math.floor(Math.random() * phrases.length)];
-    welcomeMessage.classList.remove("hidden");
+    navbar?.classList.add("hidden");
+    loginScreen?.classList.remove("hidden");
 
     const notesWrapper = document.getElementById("notesWrapper");
     if (notesWrapper) notesWrapper.remove();
-    document.getElementById("notes-search")?.remove();
-    burgerMenu?.classList.add("hidden");
+    if(becomePremiumBtn){
+      becomePremiumBtn.disabled = false;
+      becomePremiumBtn.textContent = "💎 Buy Premium";
+    }
   }
 });
+
+function fetchPrices() {
+   fetch("https://api.coingecko.com/api/v3/simple/price?ids=internet-computer,bitcoin&vs_currencies=usd")
+    .then((res) => {
+      return res.json();
+    }).then((data) => {
+
+    console.log(data);
+  });
+}

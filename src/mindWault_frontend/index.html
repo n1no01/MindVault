@@ -12,7 +12,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
 </head>
 <body>
-  <nav>
+  <nav id="navbar" class="hidden">
+    <img id="navbar-logo" src="./assets/mindvault-light11.png" alt="">
+    <input type="text" placeholder="Search notes..." name="" id="notes-search">
     <div id="burger-menu" class="burger-menu hidden">
       &#9776;
       <div id="dropdown-menu" class="dropdown hidden">
@@ -22,14 +24,25 @@
         <button id="dropdown-logout">🚪 Logout</button>
       </div>
     </div>
+  </nav>
+  <div id="login-screen">
     <img id="logo-light" src="./assets/mindvault-light.png" alt="">
     <img id="logo-dark" src="./assets/mindvault-dark.png" alt="">
     <button id="login">Login with Internet Identity</button>
     <br>
     <button id="login-google">Login with NFID</button>
-  </nav>
-  <br>
-  <h1 id="welcome-message"></h1>
+    <br>
+    <h1 id="welcome-message"></h1>
+  </div>
+  <div id="payment-modal" class="modal hidden">
+  <div class="modal-content">
+    <h2>Choose a payment method</h2>
+    <p>Premium costs $5 in your chosen token</p>
+    <button id="pay-icp">Pay with ICP</button>
+    <button id="pay-btc">Pay with BTC</button>
+    <button id="close-modal">Cancel</button>
+  </div>
+</div>
   <script type="module" src="src/main.js"></script>
 </body>
 </html>

@@ -15,11 +15,11 @@
   "workspaces": [
     "src/mindWault_frontend"
   ],
-  "devDependencies": {
-    "@dfinity/auth-client": "^2.4.1",
-    "@dfinity/identity": "^2.4.1"
-  },
   "dependencies": {
+    "@dfinity/agent": "^2.4.1",
+    "@dfinity/auth-client": "^2.4.1",
+    "@dfinity/identity": "^2.4.1",
+    "@dfinity/principal": "^2.4.1",
     "sortablejs": "^1.15.6"
   }
 }
