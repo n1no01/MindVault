@@ -21,6 +21,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   const welcomeMessage = document.getElementById("welcome-message");
   const loginBtn = document.getElementById("login");
   const loginGoogleBtn = document.getElementById("login-google");
+  const loginII20Btn = document.getElementById("login-ii-20");
   const burgerMenu = document.getElementById("burger-menu");
   const dropdownMenu = document.getElementById("dropdown-menu");
   const darkModeToggle = document.getElementById("dropdown-darkmode-toggle");
@@ -46,8 +47,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     navbar?.classList.remove("hidden");
     burgerMenu?.classList.remove("hidden");
 
-    // await loadAndRenderNotes();
-    // await updatePremiumUI();
     await Promise.all([loadAndRenderNotes(), updatePremiumUI()]);
   }
 
@@ -68,16 +67,15 @@ window.addEventListener("DOMContentLoaded", async () => {
         navbar?.classList.remove("hidden");
         burgerMenu?.classList.remove("hidden");
 
-        await loadAndRenderNotes();
-        await updatePremiumUI();
+        await Promise.all([loadAndRenderNotes(), updatePremiumUI()]);
       },
       onError: (err) => alert("Login failed. See console for details."),
     });
   }
-
+  loginII20Btn?.addEventListener("click", () => handleLogin("https://id.ai/"));
   loginBtn?.addEventListener("click", () => handleLogin("https://identity.ic0.app"));
   loginGoogleBtn?.addEventListener("click", () => handleLogin("https://nfid.one/authenticate"));
-
+  
   dropdownLogout?.addEventListener("click", async () => {
     await logout();
     dropdownMenu?.classList.add("hidden");

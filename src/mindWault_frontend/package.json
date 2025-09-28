@@ -21,9 +21,12 @@
     "vitest": "^2.0.5"
   },
   "dependencies": {
-    "@dfinity/agent": "^2.1.3",
-    "@dfinity/candid": "^2.1.3",
-    "@dfinity/principal": "^2.1.3",
+    "@dfinity/agent": "^3.2.6",
+    "@dfinity/auth-client": "^3.2.6",
+    "@dfinity/candid": "^3.2.6",
+    "@dfinity/identity": "^3.2.6",
+    "@dfinity/principal": "^3.2.6",
+    "ic-use-siwb-identity": "^0.1.0",
     "lit-html": "^2.8.0"
   }
 }

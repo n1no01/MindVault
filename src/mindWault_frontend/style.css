@@ -46,7 +46,7 @@ body.dark-mode #logo-dark {
 
 /* Auth buttons */
 #login,
-#login-google {
+#login-google, #login-ii-20 {
   cursor: pointer;
   border: 1px solid #d1d5db;
   border-radius: 8px;
@@ -62,13 +62,13 @@ body.dark-mode #logo-dark {
 
 /* Hover & focus */
 #login:hover,
-#login-google:hover {
+#login-google:hover, #login-ii-20:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(0,0,0,0.15);
 }
 
 #login:focus,
-#login-google:focus {
+#login-google:focus, #login-ii-20:focus {
   outline: none;
   border-color: #6366f1;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4);
@@ -76,13 +76,13 @@ body.dark-mode #logo-dark {
 
 /* Active click */
 #login:active,
-#login-google:active {
+#login-google:active, #login-ii-20:active {
   transform: scale(0.97);
 }
 
 /* Dark mode */
 body.dark-mode #login,
-body.dark-mode #login-google {
+body.dark-mode #login-google, body.dark-mode #login-ii-20 {
   background-color: #f9f9f9;
   color: #111;
   border: 1px solid #444;
@@ -474,7 +474,6 @@ body.dark-mode #navbar-logo {
   cursor: pointer;
   border-radius: 6px;
 }
-
 
 /* Mobile responsiveness */
 @media screen and (max-width: 600px) {

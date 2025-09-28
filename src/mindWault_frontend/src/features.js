@@ -72,3 +72,4 @@ export function exportNotesAsText(notesWrapperId) {
       searchBar.classList.toggle("hidden", noteCount < 2);
     }
   }
+  
