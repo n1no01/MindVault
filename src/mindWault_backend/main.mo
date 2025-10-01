@@ -95,18 +95,20 @@ persistent actor {
   };
 
   // Check if a user is premium
-public shared query ({caller}) func isPremium() : async Bool {
+  public shared query ({caller}) func isPremium() : async Bool {
     switch (premiumUsers.get(caller)) {
       case (?status) status;
       case null false;
     }
-};
+  };
 
-// Mark a user as premium (call after ICP payment)
-public shared({caller}) func addPremium() : async () {
+  // Mark a user as premium (call after ICP payment)
+  public shared({caller}) func addPremium() : async () {
+    if (Principal.isAnonymous(caller)) {
+      throw Error.reject("Anonymous principal cannot be a premium user.");
+    };
     premiumUsers.put(caller, true);
-};
-
+  };
 
   public shared query ({caller}) func whoami() : async Text {
     return Principal.toText(caller);
@@ -116,4 +118,23 @@ public shared({caller}) func addPremium() : async () {
   public shared query func userCount() : async Nat {
     notesByUser.size();
   };
+
+  // Returns the number of premium members
+public shared query func premiumMemberCount() : async Nat {
+  Array.filter<(Principal, Bool)>(
+    Iter.toArray(premiumUsers.entries()),
+    func((_, isPremium)) { isPremium }
+  ).size();
+};
+
+// Returns the principals of all premium members
+public shared query func premiumMemberPrincipals() : async [Principal] {
+  Array.map<(Principal, Bool), Principal>(
+    Array.filter<(Principal, Bool)>(
+      Iter.toArray(premiumUsers.entries()),
+      func((_, isPremium)) { isPremium }
+    ),
+    func((principal, _)) { principal }
+  );
+};
 }
