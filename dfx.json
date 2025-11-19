@@ -13,7 +13,8 @@
     },
     "mindWault_backend": {
       "main": "src/mindWault_backend/main.mo",
-      "type": "motoko"
+      "type": "motoko",
+      "args": "--enhanced-orthogonal-persistence"
     },
     "mindWault_frontend": {
       "dependencies": [
