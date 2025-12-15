@@ -52,7 +52,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   const canonicalOrigin = "https://aucs2-4yaaa-aaaab-abqba-cai.icp0.io";
   async function handleLogin(identityProvider) {
-    authClient = await AuthClient.create();
     authClient.login({
       identityProvider,
       derivationOrigin: canonicalOrigin,

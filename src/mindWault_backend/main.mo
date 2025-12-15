@@ -14,16 +14,16 @@ persistent actor {
   };
 
   // Map: Principal -> [Note]
-  stable var notesByUserEntries : [(Principal, [Note])] = [];
+  var notesByUserEntries : [(Principal, [Note])] = [];
   transient var notesByUser = HashMap.HashMap<Principal, [Note]>(0, Principal.equal, Principal.hash);
 
   // Map: Principal -> Bool (premium status)
-  stable var premiumUsersEntries : [(Principal, Bool)] = [];
+  var premiumUsersEntries : [(Principal, Bool)] = [];
   transient var premiumUsers = HashMap.HashMap<Principal, Bool>(0, Principal.equal, Principal.hash);
 
 
   // Global note id counter
-  stable var counter : Nat = 0;
+  var counter : Nat = 0;
 
   // Restore state after upgrade
   system func postupgrade() {
