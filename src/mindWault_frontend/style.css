@@ -35,6 +35,49 @@ body.dark-mode #logo-dark {
   background-color: #fff;
 }
 
+.note-status {
+  position: absolute;
+  bottom: 8px;
+  left: 12px;
+  font-size: 12px;
+  opacity: 0.7;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+body.dark-mode .note-status {
+  color: #ccc;
+}
+
+.note-status.fade-out {
+  opacity: 0;
+}
+
+.note-container input[type="text"] {
+  font-size: 18px;
+  margin-bottom: 6px;
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+}
+
+.note-container textarea {
+  width: 100%;
+  background: transparent;
+  margin-top: 2px;
+}
+
+/* Dark mode */
+body.dark .note-container input[type="text"] {
+  color: #f5f5f5;
+}
+
+/* Dark mode */
+body.dark .note-status {
+  color: #aaa;
+}
+
 .color-dropdown {
   position: absolute;
   top: 8px;
@@ -87,11 +130,6 @@ body.dark-mode #login-google, body.dark-mode #login-ii-20 {
   color: #111;
   border: 1px solid #444;
   box-shadow: 0 2px 6px rgba(255, 255, 255, 0.05);
-}
-
-body.dark-mode #login:hover,
-body.dark-mode #login-google:hover {
-  
 }
 
 body.dark-mode #welcome-message {
@@ -188,6 +226,8 @@ body.dark-mode #notes-search:focus {
   flex-direction: column;
   gap: 16px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transform-origin: center;
+  backface-visibility: hidden;
 }
 
 .note-container:hover {
@@ -212,6 +252,7 @@ body.dark-mode #notes-search:focus {
 .note-container textarea {
   padding: 12px;
   font-size: 16px;
+  font-weight: 400;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   resize: vertical;
@@ -495,10 +536,6 @@ body.dark-mode #navbar-logo {
   .note-container {
     width: 70%;
     gap: 5px;
-  }
-
-  .note-container textarea {
-    font-size: 12px;
   }
 
   #addNewNoteBtn {
