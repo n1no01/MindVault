@@ -68,6 +68,40 @@ body.dark-mode .note-status {
   margin-top: 2px;
 }
 
+.note-container .pin-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-size: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  opacity: 0.3; /* default: dimmed */
+}
+
+.pin-btn:hover {
+  opacity: 0.7; 
+}
+
+.note-container .pin-btn.pinned {
+  opacity: 1; /* fully visible when pinned */
+}
+
+.note-container.pinned {
+  border: 2px solid #6366f1;
+}
+
+.note-container.pinned::before {
+  content: "PINNED";
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  font-size: 10px;
+  opacity: 0.6;
+  letter-spacing: 1px;
+}
+
 /* Dark mode */
 body.dark .note-container input[type="text"] {
   color: #f5f5f5;

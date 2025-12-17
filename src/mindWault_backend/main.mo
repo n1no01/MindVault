@@ -11,24 +11,29 @@ persistent actor {
     id : Nat;
     title : Text;
     text : Text;
+    pinned : Bool;
   };
 
+  // Stable state
   // Map: Principal -> [Note]
   var notesByUserEntries : [(Principal, [Note])] = [];
-  transient var notesByUser = HashMap.HashMap<Principal, [Note]>(0, Principal.equal, Principal.hash);
-
   // Map: Principal -> Bool (premium status)
   var premiumUsersEntries : [(Principal, Bool)] = [];
-  transient var premiumUsers = HashMap.HashMap<Principal, Bool>(0, Principal.equal, Principal.hash);
-
-
   // Global note id counter
   var counter : Nat = 0;
 
+  // Transient in‑memory maps
+  transient var notesByUser =
+    HashMap.HashMap<Principal, [Note]>(0, Principal.equal, Principal.hash);
+  transient var premiumUsers =
+    HashMap.HashMap<Principal, Bool>(0, Principal.equal, Principal.hash);
+
   // Restore state after upgrade
   system func postupgrade() {
-    notesByUser := HashMap.fromIter(notesByUserEntries.vals(), 0, Principal.equal, Principal.hash);
-    premiumUsers := HashMap.fromIter(premiumUsersEntries.vals(), 0, Principal.equal, Principal.hash);
+    notesByUser :=
+      HashMap.fromIter(notesByUserEntries.vals(), 0, Principal.equal, Principal.hash);
+    premiumUsers :=
+      HashMap.fromIter(premiumUsersEntries.vals(), 0, Principal.equal, Principal.hash);
   };
 
   // Save state before upgrade
@@ -38,56 +43,109 @@ persistent actor {
   };
 
   // Create a new note
-  public shared({caller}) func create(title : Text, text : Text) : async Nat {
-    let userNotes = switch (notesByUser.get(caller)) {
-      case (?n) n;
-      case null [];
-    };
-     // Limit notes based on premium status
-    let limit = switch (premiumUsers.get(caller)) {
+  public shared ({ caller }) func create(title : Text, text : Text) : async Nat {
+    let userNotes =
+      switch (notesByUser.get(caller)) {
+        case (?n) n;
+        case null [];
+      };
+
+    // Limit notes based on premium status
+    let limit =
+      switch (premiumUsers.get(caller)) {
         case (?true) 100;
         case null 20;
+      };
+
+    if (userNotes.size() >= limit) {
+      throw Error.reject("Note limit reached. Upgrade to premium to add more notes.");
     };
 
-     if (userNotes.size() >= limit) {
-       throw Error.reject("Note limit reached. Upgrade to premium to add more notes.");
+    let note : Note = {
+      id = counter;
+      title = title;
+      text = text;
+      pinned = false;
     };
-
-    let note : Note = { id = counter; title = title; text = text };
     notesByUser.put(caller, Array.append(userNotes, [note]));
     counter += 1;
     return note.id;
   };
 
   // Get all notes for the caller
-  public shared({caller}) func getNotes() : async [Note] {
-   return switch (notesByUser.get(caller)) {
+  public shared ({ caller }) func getNotes() : async [Note] {
+    return switch (notesByUser.get(caller)) {
       case (?n) Array.reverse(n);
       case null [];
-    }
+    };
   };
 
-  // Update a note's text (only by owner)
-  public shared({caller}) func update(noteId : Nat, newText : Text, newTitle: Text) : async () {
-    let userNotes = switch (notesByUser.get(caller)) {
-      case (?n) n;
-      case null return;
-    };
-    let updatedNotes = Array.map<Note, Note>(userNotes, func(note) {
-      if (note.id == noteId) { { note with title = newTitle; text = newText} } else { note }
-    });
+  // Update a note's text and title (only by owner)
+  public shared ({ caller }) func update(
+    noteId : Nat,
+    newText : Text,
+    newTitle : Text,
+  ) : async () {
+    let userNotes =
+      switch (notesByUser.get(caller)) {
+        case (?n) n;
+        case null return;
+      };
+    let updatedNotes =
+      Array.map<Note, Note>(
+        userNotes,
+        func (note) {
+          if (note.id == noteId) {
+            { note with title = newTitle; text = newText };
+          } else {
+            note;
+          }
+        },
+      );
     notesByUser.put(caller, updatedNotes);
   };
 
+  // Pin or unpin a note (only by owner)
+  public shared ({ caller }) func setPinned(noteId : Nat, pinned : Bool) : async () {
+    let userNotes =
+      switch (notesByUser.get(caller)) {
+        case (?n) n;
+        case null return;
+      };
+    let updatedNotes =
+      Array.map<Note, Note>(
+        userNotes,
+        func (note) {
+          if (note.id == noteId) {
+            { note with pinned = pinned };
+          } else {
+            note;
+          }
+        },
+      );
+    notesByUser.put(caller, updatedNotes);
+  };
+
+  // Get only pinned notes for the caller
+  public shared ({ caller }) func getPinnedNotes() : async [Note] {
+    let userNotes =
+      switch (notesByUser.get(caller)) {
+        case (?n) n;
+        case null [];
+      };
+    return Array.filter<Note>(userNotes, func (note) { note.pinned });
+  };
+
   // Delete a note (only by owner)
-  public shared({caller}) func delete(noteId : Nat) : async () {
-    let userNotes = switch (notesByUser.get(caller)) {
-      case (?n) n;
-      case null return;
-    };
-    let filteredNotes = Array.filter<Note>(userNotes, func(note) { note.id != noteId });
+  public shared ({ caller }) func delete(noteId : Nat) : async () {
+    let userNotes =
+      switch (notesByUser.get(caller)) {
+        case (?n) n;
+        case null return;
+      };
+    let filteredNotes =
+      Array.filter<Note>(userNotes, func (note) { note.id != noteId });
     if (filteredNotes.size() == 0) {
-    // Remove the principal from the map if no notes remain
       ignore notesByUser.remove(caller);
     } else {
       notesByUser.put(caller, filteredNotes);
@@ -95,7 +153,7 @@ persistent actor {
   };
 
   // Check if a user is premium
-  public shared query ({caller}) func isPremium() : async Bool {
+  public shared query ({ caller }) func isPremium() : async Bool {
     switch (premiumUsers.get(caller)) {
       case (?status) status;
       case null false;
@@ -103,14 +161,14 @@ persistent actor {
   };
 
   // Mark a user as premium (call after ICP payment)
-  public shared({caller}) func addPremium() : async () {
+  public shared ({ caller }) func addPremium() : async () {
     if (Principal.isAnonymous(caller)) {
       throw Error.reject("Anonymous principal cannot be a premium user.");
     };
     premiumUsers.put(caller, true);
   };
 
-  public shared query ({caller}) func whoami() : async Text {
+  public shared query ({ caller }) func whoami() : async Text {
     return Principal.toText(caller);
   };
 
@@ -120,21 +178,21 @@ persistent actor {
   };
 
   // Returns the number of premium members
-public shared query func premiumMemberCount() : async Nat {
-  Array.filter<(Principal, Bool)>(
-    Iter.toArray(premiumUsers.entries()),
-    func((_, isPremium)) { isPremium }
-  ).size();
-};
-
-// Returns the principals of all premium members
-public shared query func premiumMemberPrincipals() : async [Principal] {
-  Array.map<(Principal, Bool), Principal>(
+  public shared query func premiumMemberCount() : async Nat {
     Array.filter<(Principal, Bool)>(
       Iter.toArray(premiumUsers.entries()),
-      func((_, isPremium)) { isPremium }
-    ),
-    func((principal, _)) { principal }
-  );
-};
+      func ((_, isPremium)) { isPremium },
+    ).size();
+  };
+
+  // Returns the principals of all premium members
+  public shared query func premiumMemberPrincipals() : async [Principal] {
+    Array.map<(Principal, Bool), Principal>(
+      Array.filter<(Principal, Bool)>(
+        Iter.toArray(premiumUsers.entries()),
+        func ((_, isPremium)) { isPremium },
+      ),
+      func ((principal, _)) { principal },
+    );
+  };
 }

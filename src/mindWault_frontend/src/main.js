@@ -12,7 +12,7 @@ import {
 const phrases = [
   "Your thoughts belong here. Start capturing what matters.",
   "Turn ideas into action — one note at a time.",
-  "Where your thoughts take shape.",
+  "Where ideas take shape.",
   "Notes that remember what you shouldn't have to.",
   "Organize the chaos. Start noting.",
   "Your second brain starts here."
@@ -35,8 +35,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   const loginScreen = document.getElementById("login-screen");
   const navbar = document.getElementById("navbar");
 
-  welcomeMessage.textContent =
-    phrases[Math.floor(Math.random() * phrases.length)];
+  welcomeMessage.textContent = phrases[Math.floor(Math.random() * phrases.length)];
 
   authClient = await AuthClient.create();
   const isAuthenticated = await authClient.isAuthenticated();
@@ -75,15 +74,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  loginBtn?.addEventListener("click", () =>
-    handleLogin("https://identity.ic0.app")
-  );
-  loginGoogleBtn?.addEventListener("click", () =>
-    handleLogin("https://nfid.one/authenticate")
-  );
-  loginII20Btn?.addEventListener("click", () =>
-    handleLogin("https://id.ai/")
-  );
+  loginBtn?.addEventListener("click", () => handleLogin("https://identity.ic0.app"));
+  loginGoogleBtn?.addEventListener("click", () => handleLogin("https://nfid.one/authenticate"));
+  loginII20Btn?.addEventListener("click", () => handleLogin("https://id.ai/"));
 
   dropdownLogout?.addEventListener("click", async () => {
     await authClient.logout();
@@ -107,11 +100,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     dropdownMenu?.classList.toggle("hidden");
   });
 
-  document.addEventListener("click", () =>
-    dropdownMenu?.classList.add("hidden")
-  );
+  document.addEventListener("click", () => dropdownMenu?.classList.add("hidden"));
 
   /* ---------------- NOTES ---------------- */
+
   async function loadAndRenderNotes() {
     let notesWrapper = document.getElementById("notesWrapper");
     if (!notesWrapper) {
@@ -120,14 +112,14 @@ window.addEventListener("DOMContentLoaded", async () => {
       document.body.appendChild(notesWrapper);
     } else notesWrapper.innerHTML = "";
 
-    const notes = await actor.getNotes();
-    
-    // Initialize search
+    const notes = await actor.getNotes(); // all notes with pinned property
+    const pinnedNotes = notes.filter(n => n.pinned);
+    const unpinnedNotes = notes.filter(n => !n.pinned);
+
     enableNotesSearch("notesWrapper", "notes-search");
 
-    notes.forEach((note) =>
-      createNoteElement(note.id, note.title, note.text, notesWrapper)
-    );
+    pinnedNotes.forEach(note => createNoteElement(note.id, note.title, note.text, notesWrapper, true));
+    unpinnedNotes.forEach(note => createNoteElement(note.id, note.title, note.text, notesWrapper, false));
 
     toggleSearchBarVisibility();
 
@@ -138,60 +130,45 @@ window.addEventListener("DOMContentLoaded", async () => {
     notesWrapper.appendChild(addNewNoteBtn);
   }
 
- function setupAutoSave(noteContainer, noteTitle, noteContent) {
-  let timeout;
-  let lastSaved = {
-    title: noteTitle.value,
-    content: noteContent.value
-  };
+  function setupAutoSave(noteContainer, noteTitle, noteContent) {
+    let timeout;
 
-  const showSavedStatus = () => {
-    let status = noteContainer.querySelector(".note-status");
+    const showSavedStatus = () => {
+      let status = noteContainer.querySelector(".note-status");
+      if (!status) {
+        status = document.createElement("span");
+        status.className = "note-status";
+        status.textContent = "Saved";
+        noteContainer.appendChild(status);
+      }
+      status.classList.remove("fade-out");
+      setTimeout(() => {
+        status.classList.add("fade-out");
+        setTimeout(() => status.remove(), 500);
+      }, 1500);
+    };
 
-    if (!status) {
-      status = document.createElement("span");
-      status.className = "note-status";
-      status.textContent = "Saved";
-      noteContainer.appendChild(status);
-    }
+    const save = async () => {
+      const title = noteTitle.value.trim();
+      if (!title) return;
+      try {
+        await actor.update(BigInt(noteContainer.dataset.id), noteContent.value, title);
+        showSavedStatus();
+      } catch {
+        showToast("Save failed");
+      }
+    };
 
-    // reset in case user types again
-    status.classList.remove("fade-out");
+    const schedule = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(save, 1800);
+    };
 
-    setTimeout(() => {
-      status.classList.add("fade-out");
-      setTimeout(() => status.remove(), 500); // remove after fade
-    }, 1500); // visible for 1.5s
-  };
+    noteTitle.addEventListener("input", schedule);
+    noteContent.addEventListener("input", schedule);
+  }
 
-  const save = async () => {
-    const title = noteTitle.value.trim();
-    if (!title) return; // silently ignore empty title
-
-    try {
-      await actor.update(
-        BigInt(noteContainer.dataset.id),
-        noteContent.value,
-        title
-      );
-      lastSaved = { title, content: noteContent.value };
-      showSavedStatus(); // show saved text
-    } catch {
-      showToast("Save failed");
-    }
-  };
-
-  const schedule = () => {
-    clearTimeout(timeout);
-    timeout = setTimeout(save, 1800);
-  };
-
-  noteTitle.addEventListener("input", schedule);
-  noteContent.addEventListener("input", schedule);
-}
-
-
-  function createNoteElement(id, title, text, container) {
+  function createNoteElement(id, title, text, container, pinned) {
     const noteContainer = document.createElement("div");
     noteContainer.className = "note-container";
     noteContainer.dataset.id = id;
@@ -199,7 +176,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     const noteTitle = document.createElement("input");
     noteTitle.type = "text";
     noteTitle.value = title;
-    noteTitle.className = "note-title"; // keep your styling
+    noteTitle.className = "note-title";
 
     const noteContent = document.createElement("textarea");
     noteContent.value = text;
@@ -217,9 +194,42 @@ window.addEventListener("DOMContentLoaded", async () => {
       showToast("Note deleted");
     };
 
+    const pinBtn = document.createElement("span");
+    pinBtn.className = "pin-btn";
+    pinBtn.textContent =  "📌";
+    pinBtn.classList.toggle("pinned", pinned);
+
+ pinBtn.onclick = async () => {
+  try {
+    await actor.setPinned(BigInt(id), !pinned);
+    pinned = !pinned;
+    pinBtn.classList.toggle("pinned", pinned);
+
+    // Move the note container to the top of the wrapper if pinned
+    const notesWrapper = noteContainer.parentElement;
+    if (pinned) {
+      notesWrapper.prepend(noteContainer);
+    } else {
+      // Move unpinned note after all pinned notes
+      const allNotes = Array.from(notesWrapper.querySelectorAll(".note-container"));
+      const lastPinnedIndex = allNotes.findIndex(n => n.dataset.id === id);
+      // Find the first unpinned note after pinned ones
+      let insertAfter = allNotes.find(n => n !== noteContainer && !n.querySelector(".pin-btn").textContent.includes("📌"));
+      if (insertAfter) {
+        insertAfter.after(noteContainer);
+      } else {
+        notesWrapper.appendChild(noteContainer);
+      }
+    }
+  } catch {
+    showToast("Failed to pin note");
+  }
+};
+
+
     buttons.append(deleteBtn);
 
-    noteContainer.append(noteTitle, noteContent, buttons);
+    noteContainer.append(noteTitle, noteContent, buttons, pinBtn);
     container.appendChild(noteContainer);
 
     setupAutoSave(noteContainer, noteTitle, noteContent);
@@ -232,7 +242,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     const noteTitle = document.createElement("input");
     noteTitle.type = "text";
     noteTitle.placeholder = "Note Title";
-    noteTitle.className = "note-title"; // keep styling
+    noteTitle.className = "note-title";
 
     const noteContent = document.createElement("textarea");
     noteContent.placeholder = "Write your note here...";
@@ -244,8 +254,25 @@ window.addEventListener("DOMContentLoaded", async () => {
     deleteBtn.textContent = "Discard";
     deleteBtn.onclick = () => noteContainer.remove();
 
+    const pinBtn = document.createElement("button");
+    pinBtn.className = "pin-btn";
+    pinBtn.textContent = "📍"; // new notes are unpinned
+    let pinned = false;
+
+    pinBtn.onclick = async () => {
+      if (!noteContainer.dataset.id) return; // not saved yet
+      try {
+        await actor.setPinned(BigInt(noteContainer.dataset.id), !pinned);
+        pinned = !pinned;
+        pinBtn.textContent = pinned ? "📌" : "📍";
+        await loadAndRenderNotes();
+      } catch {
+        showToast("Failed to pin note");
+      }
+    };
+
     buttons.append(deleteBtn);
-    noteContainer.append(noteTitle, noteContent, buttons);
+    noteContainer.append(noteTitle, noteContent, buttons, pinBtn);
     notesWrapper.prepend(noteContainer);
 
     let timeout;
@@ -263,6 +290,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             noteId = await actor.create(title, noteContent.value);
             noteContainer.dataset.id = noteId;
             created = true;
+
             deleteBtn.textContent = "Delete";
             deleteBtn.onclick = async () => {
               if (!confirm("Delete this note?")) return;
@@ -270,13 +298,8 @@ window.addEventListener("DOMContentLoaded", async () => {
               noteContainer.remove();
               toggleSearchBarVisibility();
             };
-            setupAutoSave(noteContainer, noteTitle, noteContent);
           } else {
-            await actor.update(
-              noteContainer.dataset.id,
-              noteContent.value,
-              title
-            );
+            await actor.update(noteContainer.dataset.id, noteContent.value, title);
           }
         } catch {
           showToast("Save failed");
