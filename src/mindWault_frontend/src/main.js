@@ -21,6 +21,7 @@ const phrases = [
 let authClient;
 let actor;
 let principalId;
+const myWalletAccountId = "853bd374992baa60b4b5deadba7d3bb607e0e9bfc77e1fca91a94747de926c94";
 
 window.addEventListener("DOMContentLoaded", async () => {
   const welcomeMessage = document.getElementById("welcome-message");
@@ -29,6 +30,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   const loginII20Btn = document.getElementById("login-ii-20");
   const burgerMenu = document.getElementById("burger-menu");
   const dropdownMenu = document.getElementById("dropdown-menu");
+  const premiumBtn = document.getElementById("dropdown-premium");
   const darkModeToggle = document.getElementById("dropdown-darkmode-toggle");
   const exportNotesBtn = document.getElementById("dropdown-export-notes");
   const dropdownLogout = document.getElementById("dropdown-logout");
@@ -37,7 +39,12 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   welcomeMessage.textContent = phrases[Math.floor(Math.random() * phrases.length)];
 
-  authClient = await AuthClient.create();
+  authClient = await AuthClient.create({
+    idleOptions: {
+      idleTimeout: 1000 * 60 * 10,
+      disableDefaultIdleCallback: true,
+    },
+  });
   const isAuthenticated = await authClient.isAuthenticated();
 
   if (isAuthenticated) {
@@ -49,8 +56,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     loginScreen?.classList.add("hidden");
     navbar?.classList.remove("hidden");
     burgerMenu?.classList.remove("hidden");
-
-    await loadAndRenderNotes();
+    Promise.all([await updatePremiumUI(), await loadAndRenderNotes()]);
+    // await updatePremiumUI();
+    // await loadAndRenderNotes();
   }
 
   const canonicalOrigin = "https://aucs2-4yaaa-aaaab-abqba-cai.icp0.io";
@@ -68,8 +76,9 @@ window.addEventListener("DOMContentLoaded", async () => {
         loginScreen?.classList.add("hidden");
         navbar?.classList.remove("hidden");
         burgerMenu?.classList.remove("hidden");
-
-        await loadAndRenderNotes();
+        Promise.all([await loadAndRenderNotes(), await updatePremiumUI()]);
+        // await loadAndRenderNotes();
+        // await updatePremiumUI();
       }
     });
   }
@@ -89,6 +98,49 @@ window.addEventListener("DOMContentLoaded", async () => {
     isDarkMode = !isDarkMode;
     applyDarkMode(isDarkMode);
   });
+
+ premiumBtn?.addEventListener("click", async () => {
+    if (!window.ic || !window.ic.plug) {
+      alert("Plug wallet is not installed!");
+      return;
+    }
+
+    try {
+      const connected = await window.ic.plug.requestConnect({
+        whitelist: [canisterId, "ryjl3-tyaaa-aaaaa-aaaba-cai"],
+      });
+      if (!connected) return;
+
+      const transferResult = await window.ic.plug.requestTransfer({
+        to: myWalletAccountId,
+        amount: 50_000_000,
+        memo: 0,
+      });
+
+      if (transferResult && transferResult.height) {
+        await actor.addPremium();
+        showToast("You are now a premium member!");
+        premiumBtn.disabled = true;
+        premiumBtn.textContent = "💎 Premium User";
+      } else {
+        alert("Payment failed or canceled.");
+      }
+    } catch (err) {
+      alert("Payment failed. Check console for details.");
+    }
+  });
+
+  async function updatePremiumUI() {
+    if (!actor || !premiumBtn) return;
+    const isPremium = await actor.isPremium();
+    if (isPremium) {
+      premiumBtn.disabled = true;
+      premiumBtn.textContent = "💎 Premium User";
+    } else {
+      premiumBtn.disabled = false;
+      premiumBtn.textContent = "💎 Buy Premium";
+    }
+  }
 
   exportNotesBtn?.addEventListener("click", () => {
     exportNotesAsText("notesWrapper");
@@ -256,7 +308,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     const pinBtn = document.createElement("button");
     pinBtn.className = "pin-btn";
-    pinBtn.textContent = "📍"; // new notes are unpinned
+    pinBtn.textContent = "📌";
     let pinned = false;
 
     pinBtn.onclick = async () => {
@@ -264,7 +316,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       try {
         await actor.setPinned(BigInt(noteContainer.dataset.id), !pinned);
         pinned = !pinned;
-        pinBtn.textContent = pinned ? "📌" : "📍";
+        pinBtn.textContent = "📌";
         await loadAndRenderNotes();
       } catch {
         showToast("Failed to pin note");
