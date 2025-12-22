@@ -264,12 +264,6 @@ body.dark-mode #notes-search:focus {
   backface-visibility: hidden;
 }
 
-.note-container:hover {
-  transform: scale(1.10);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-  z-index: 10;
-}
-
 .note-container input[type="text"] {
   padding: 12px;
   font-size: 18px;
