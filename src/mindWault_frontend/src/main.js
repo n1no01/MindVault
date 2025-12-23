@@ -71,6 +71,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       await actor.addPremium();
       await updatePremiumUI();
       showToast("Payment received, you are now premium!");
+      premiumModal.remove();
     } else {
         alert(`Payment failed: ${result.err}`);
       }
