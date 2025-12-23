@@ -19,7 +19,10 @@
     "@dfinity/agent": "^2.4.1",
     "@dfinity/auth-client": "^2.4.1",
     "@dfinity/identity": "^2.4.1",
+    "@dfinity/ledger-icp": "^9.1.0",
     "@dfinity/principal": "^2.4.1",
+    "@dfinity/utils": "^4.1.0",
+    "@icp-sdk/core": "^5.0.0",
     "sortablejs": "^1.15.6"
   }
 }

@@ -1,13 +1,26 @@
 import { AuthClient } from "@dfinity/auth-client";
 import { createActor, canisterId } from "../../declarations/mindWault_backend";
-import { HttpAgent } from "@dfinity/agent";
+import { HttpAgent, Actor } from "@dfinity/agent";
 import {
   showToast,
   enableNotesSearch,
   applyDarkMode,
   exportNotesAsText,
-  toggleSearchBarVisibility
+  toggleSearchBarVisibility,
+  createPremiumModal
 } from "./features.js";
+
+// ICP ledger canister info
+const ICP_LEDGER_CANISTER_ID = "ryjl3-tyaaa-aaaaa-aaaba-cai";
+
+// Minimal Candid for `account_balance` [[Ledger balance](https://internetcomputer.org/docs/references/ledger#_balance)]
+const ledgerIdlFactory = ({ IDL }) => {
+  const Tokens = IDL.Record({ e8s: IDL.Nat64 });
+  const AccountBalanceArgs = IDL.Record({ account: IDL.Vec(IDL.Nat8) });
+  return IDL.Service({
+    account_balance: IDL.Func([AccountBalanceArgs], [Tokens], ["query"]),
+  });
+};
 
 const phrases = [
   "Your thoughts belong here. Start capturing what matters.",
@@ -21,6 +34,11 @@ const phrases = [
 let authClient;
 let actor;
 let principalId;
+let identity; // keep identity globally so we can reuse it
+let ledgerActor; // reuse ledger actor
+let currentDepositAccountBlob = null; // Uint8Array
+let currentDepositAccountHex = null;
+
 const myWalletAccountId = "853bd374992baa60b4b5deadba7d3bb607e0e9bfc77e1fca91a94747de926c94";
 
 window.addEventListener("DOMContentLoaded", async () => {
@@ -37,6 +55,40 @@ window.addEventListener("DOMContentLoaded", async () => {
   const loginScreen = document.getElementById("login-screen");
   const navbar = document.getElementById("navbar");
 
+
+  const premiumModal = createPremiumModal();
+
+  const premiumAddressInput = document.getElementById("premium-address-input");
+  const premiumBalanceText = document.getElementById("premium-balance-text");
+  const premiumBalanceRefresh = document.getElementById("premium-balance-refresh");
+  const premiumModalClose = document.getElementById("premium-modal-close");
+  const premiumModalPay = document.getElementById("premium-modal-pay");
+
+  premiumModalPay.addEventListener("click", async () => {
+    const result = await actor.sendHalfIcpToMyWallet();
+    if ("ok" in result) {
+    // transfer succeeded, mark UI as premium
+      await actor.addPremium();
+      await updatePremiumUI();
+      showToast("Payment received, you are now premium!");
+    } else {
+        alert(`Payment failed: ${result.err}`);
+      }
+  });
+
+  premiumModalClose.addEventListener("click", () => {
+    premiumModal.style.display = "none";
+  });
+
+premiumAddressInput.addEventListener("click", () => {
+  premiumAddressInput.select();
+});
+
+  premiumBalanceRefresh.addEventListener("click", async () => {
+    if (!currentDepositAccountBlob || !identity) return;
+    await updatePremiumBalanceUI(currentDepositAccountBlob);
+  });
+
   welcomeMessage.textContent = phrases[Math.floor(Math.random() * phrases.length)];
 
   authClient = await AuthClient.create({
@@ -48,7 +100,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   const isAuthenticated = await authClient.isAuthenticated();
 
   if (isAuthenticated) {
-    const identity = await authClient.getIdentity();
+    identity = await authClient.getIdentity();
     principalId = identity.getPrincipal().toText();
     const agent = new HttpAgent({ identity });
     actor = createActor(canisterId, { agent });
@@ -56,19 +108,23 @@ window.addEventListener("DOMContentLoaded", async () => {
     loginScreen?.classList.add("hidden");
     navbar?.classList.remove("hidden");
     burgerMenu?.classList.remove("hidden");
-    Promise.all([await updatePremiumUI(), await loadAndRenderNotes()]);
-    // await updatePremiumUI();
-    // await loadAndRenderNotes();
+    currentDepositAccountBlob = await actor.getDepositAccount(); // Uint8Array
+        currentDepositAccountHex = Array.from(currentDepositAccountBlob)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        console.log("Your ICP deposit address:", currentDepositAccountHex);
+   await Promise.all([updatePremiumUI(), loadAndRenderNotes()]);
   }
 
   const canonicalOrigin = "https://aucs2-4yaaa-aaaab-abqba-cai.icp0.io";
+
   async function handleLogin(identityProvider) {
     authClient.login({
       identityProvider,
       derivationOrigin: canonicalOrigin,
       maxTimeToLive: BigInt(7n * 24n * 60n * 60n * 1_000_000_000n),
       onSuccess: async () => {
-        const identity = await authClient.getIdentity();
+        identity = await authClient.getIdentity();
         principalId = identity.getPrincipal().toText();
         const agent = new HttpAgent({ identity });
         actor = createActor(canisterId, { agent });
@@ -77,10 +133,49 @@ window.addEventListener("DOMContentLoaded", async () => {
         navbar?.classList.remove("hidden");
         burgerMenu?.classList.remove("hidden");
         Promise.all([await loadAndRenderNotes(), await updatePremiumUI()]);
-        // await loadAndRenderNotes();
-        // await updatePremiumUI();
+
+        currentDepositAccountBlob = await actor.getDepositAccount(); // Uint8Array
+        currentDepositAccountHex = Array.from(currentDepositAccountBlob)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        console.log("Your ICP deposit address:", currentDepositAccountHex);
       }
     });
+  }
+
+  // Create / reuse ledger actor
+  async function getLedgerActor() {
+    if (ledgerActor) return ledgerActor;
+    if (!identity) return null;
+
+    const ledgerAgent = new HttpAgent({ identity });
+    ledgerActor = Actor.createActor(ledgerIdlFactory, {
+      agent: ledgerAgent,
+      canisterId: ICP_LEDGER_CANISTER_ID,
+    });
+    return ledgerActor;
+  }
+
+  // Fetch balance for given account blob and update modal UI
+  async function updatePremiumBalanceUI(accountBlob) {
+    try {
+      premiumBalanceText.textContent = "Loading...";
+      const ledger = await getLedgerActor();
+      if (!ledger) {
+        premiumBalanceText.textContent = "Error";
+        return;
+      }
+
+      const res = await ledger.account_balance({
+        account: Array.from(accountBlob),
+      });
+
+      const icp = Number(res.e8s) / 100_000_000;
+      premiumBalanceText.textContent = `${icp} ICP`;
+    } catch (e) {
+      console.error("Failed to fetch ICP balance:", e);
+      premiumBalanceText.textContent = "Error";
+    }
   }
 
   loginBtn?.addEventListener("click", () => handleLogin("https://identity.ic0.app"));
@@ -99,34 +194,30 @@ window.addEventListener("DOMContentLoaded", async () => {
     applyDarkMode(isDarkMode);
   });
 
- premiumBtn?.addEventListener("click", async () => {
-    if (!window.ic || !window.ic.plug) {
-      alert("Plug wallet is not installed!");
+  premiumBtn?.addEventListener("click", async () => {
+    if (!identity || !actor) {
+      showToast("Please log in first.");
       return;
     }
 
     try {
-      const connected = await window.ic.plug.requestConnect({
-        whitelist: [canisterId, "ryjl3-tyaaa-aaaaa-aaaba-cai"],
-      });
-      if (!connected) return;
-
-      const transferResult = await window.ic.plug.requestTransfer({
-        to: myWalletAccountId,
-        amount: 50_000_000,
-        memo: 0,
-      });
-
-      if (transferResult && transferResult.height) {
-        await actor.addPremium();
-        showToast("You are now a premium member!");
-        premiumBtn.disabled = true;
-        premiumBtn.textContent = "💎 Premium User";
-      } else {
-        alert("Payment failed or canceled.");
+        currentDepositAccountBlob = await actor.getDepositAccount();
+        currentDepositAccountHex = Array.from(currentDepositAccountBlob)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+          const input = document.getElementById("premium-address-input");
+          if (input) {
+            input.value = currentDepositAccountHex;
+          }
+          
+          await updatePremiumBalanceUI(currentDepositAccountBlob);
+          premiumModal.style.display = "flex";
       }
-    } catch (err) {
-      alert("Payment failed. Check console for details.");
+
+    
+    catch (e) {
+      console.error("Error preparing premium payment info:", e);
+      showToast("Could not load premium payment info.");
     }
   });
 
@@ -251,33 +342,30 @@ window.addEventListener("DOMContentLoaded", async () => {
     pinBtn.textContent =  "📌";
     pinBtn.classList.toggle("pinned", pinned);
 
- pinBtn.onclick = async () => {
-  try {
-    await actor.setPinned(BigInt(id), !pinned);
-    pinned = !pinned;
-    pinBtn.classList.toggle("pinned", pinned);
+    pinBtn.onclick = async () => {
+      try {
+        await actor.setPinned(BigInt(id), !pinned);
+        pinned = !pinned;
+        pinBtn.classList.toggle("pinned", pinned);
 
-    // Move the note container to the top of the wrapper if pinned
-    const notesWrapper = noteContainer.parentElement;
-    if (pinned) {
-      notesWrapper.prepend(noteContainer);
-    } else {
-      // Move unpinned note after all pinned notes
-      const allNotes = Array.from(notesWrapper.querySelectorAll(".note-container"));
-      const lastPinnedIndex = allNotes.findIndex(n => n.dataset.id === id);
-      // Find the first unpinned note after pinned ones
-      let insertAfter = allNotes.find(n => n !== noteContainer && !n.querySelector(".pin-btn").textContent.includes("📌"));
-      if (insertAfter) {
-        insertAfter.after(noteContainer);
-      } else {
-        notesWrapper.appendChild(noteContainer);
+        const notesWrapper = noteContainer.parentElement;
+        if (pinned) {
+          notesWrapper.prepend(noteContainer);
+        } else {
+          const allNotes = Array.from(notesWrapper.querySelectorAll(".note-container"));
+          let insertAfter = allNotes.find(
+            n => n !== noteContainer && !n.querySelector(".pin-btn").classList.contains("pinned")
+          );
+          if (insertAfter) {
+            insertAfter.after(noteContainer);
+          } else {
+            notesWrapper.appendChild(noteContainer);
+          }
+        }
+      } catch {
+        showToast("Failed to pin note");
       }
-    }
-  } catch {
-    showToast("Failed to pin note");
-  }
-};
-
+    };
 
     buttons.append(deleteBtn);
 
@@ -312,7 +400,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     let pinned = false;
 
     pinBtn.onclick = async () => {
-      if (!noteContainer.dataset.id) return; // not saved yet
+      if (!noteContainer.dataset.id) return;
       try {
         await actor.setPinned(BigInt(noteContainer.dataset.id), !pinned);
         pinned = !pinned;

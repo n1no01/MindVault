@@ -73,3 +73,40 @@ export function exportNotesAsText(notesWrapperId) {
     }
   }
   
+ // --- PREMIUM MODAL DOM CREATION ---
+ export function createPremiumModal() {
+  const premiumModal = document.createElement("div");
+  premiumModal.id = "premium-modal";
+  premiumModal.className = "premium-modal";
+  premiumModal.style.display = "none";
+
+  premiumModal.innerHTML = `
+    <div class="premium-modal-card">
+      <h2>Premium Payment Details</h2>
+      <p class="premium-description">
+        Send ICP to the address below. Once the transfer is confirmed, click "Buy Premium".
+      </p>
+
+      <div class="premium-section">
+        <label>Deposit Address</label>
+        <input id="premium-address-input" type="text" readonly />
+      </div>
+
+      <div class="premium-section">
+        <label>Balance</label>
+        <div class="premium-balance-row">
+          <span id="premium-balance-text">Loading...</span>
+          <button id="premium-balance-refresh">Refresh</button>
+        </div>
+      </div>
+
+      <div class="premium-actions">
+        <button id="premium-modal-pay" class="premium-actions-buttons">Buy Premium</button>
+        <button id="premium-modal-close" class="premium-actions-buttons">Close</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(premiumModal);
+  return premiumModal;
+}
