@@ -442,7 +442,6 @@ body.dark-mode textarea:focus {
 }
 
 body.dark-mode .note-container button {
-  background-color: #333;
   color: white;
 }
 

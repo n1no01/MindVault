@@ -377,6 +377,20 @@ premiumAddressInput.addEventListener("click", () => {
   }
 
   function createNewNote(notesWrapper) {
+    const showSavedStatus = () => {
+      let status = noteContainer.querySelector(".note-status");
+  if (!status) {
+    status = document.createElement("span");
+    status.className = "note-status";
+    status.textContent = "Saved";
+    noteContainer.appendChild(status);
+  }
+  status.classList.remove("fade-out");
+  setTimeout(() => {
+    status.classList.add("fade-out");
+    setTimeout(() => status.remove(), 500);
+  }, 1500);
+};
     const noteContainer = document.createElement("div");
     noteContainer.className = "note-container";
 
@@ -395,7 +409,7 @@ premiumAddressInput.addEventListener("click", () => {
     deleteBtn.textContent = "Discard";
     deleteBtn.onclick = () => noteContainer.remove();
 
-    const pinBtn = document.createElement("button");
+    const pinBtn = document.createElement("span");
     pinBtn.className = "pin-btn";
     pinBtn.textContent = "📌";
     let pinned = false;
@@ -405,8 +419,6 @@ premiumAddressInput.addEventListener("click", () => {
       try {
         await actor.setPinned(BigInt(noteContainer.dataset.id), !pinned);
         pinned = !pinned;
-        pinBtn.textContent = "📌";
-        await loadAndRenderNotes();
       } catch {
         showToast("Failed to pin note");
       }
@@ -431,7 +443,7 @@ premiumAddressInput.addEventListener("click", () => {
             noteId = await actor.create(title, noteContent.value);
             noteContainer.dataset.id = noteId;
             created = true;
-
+            showSavedStatus();
             deleteBtn.textContent = "Delete";
             deleteBtn.onclick = async () => {
               if (!confirm("Delete this note?")) return;
@@ -440,7 +452,8 @@ premiumAddressInput.addEventListener("click", () => {
               toggleSearchBarVisibility();
             };
           } else {
-            await actor.update(noteContainer.dataset.id, noteContent.value, title);
+            await actor.update(BigInt(noteContainer.dataset.id), noteContent.value, title);
+            showSavedStatus();
           }
         } catch {
           showToast("Save failed");
