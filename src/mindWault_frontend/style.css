@@ -159,8 +159,6 @@ body.dark-mode .note-status {
   border-radius: 4px;
   border: none;
   cursor: pointer;
-  background-color: #111827;
-  color: #e5e7eb;
 }
 
 body.dark-mode .premium-modal-card {
@@ -174,10 +172,11 @@ body.dark-mode .premium-section input {
   color: #e5e7eb;
 }
 
-body.dark-mode .premium-actions button {
+body.dark-mode .premium-actions button .premium-balance-refresh {
   border: 1px solid #4b5563;
   background: #ffffff;
   color: #111827;
+  cursor: pointer;
 }
 body.light-mode .premium-modal-card {
   background: #ffffff;
@@ -190,9 +189,9 @@ body.light-mode .premium-section input {
   color: #111827;
 }
 
-body.light-mode .premium-actions button {
+body.light-mode .premium-actions button .premium-balance-refresh {
   border: 1px solid #d1d5db;
-  
+  cursor: pointer;
 }
 
 

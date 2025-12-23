@@ -84,7 +84,7 @@ export function exportNotesAsText(notesWrapperId) {
     <div class="premium-modal-card">
       <h2>Premium Payment Details</h2>
       <p class="premium-description">
-        Send ICP to the address below. Once the transfer is confirmed, click "Buy Premium".
+        Send 0.5 ICP to the address below. Once the transfer is confirmed, click "Buy Premium".
       </p>
 
       <div class="premium-section">
@@ -96,7 +96,7 @@ export function exportNotesAsText(notesWrapperId) {
         <label>Balance</label>
         <div class="premium-balance-row">
           <span id="premium-balance-text">Loading...</span>
-          <button id="premium-balance-refresh">Refresh</button>
+          <span id="premium-balance-refresh">⟲</span>
         </div>
       </div>
 
