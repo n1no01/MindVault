@@ -444,6 +444,7 @@ premiumAddressInput.addEventListener("click", () => {
             noteContainer.dataset.id = noteId;
             created = true;
             showSavedStatus();
+            toggleSearchBarVisibility();
             deleteBtn.textContent = "Delete";
             deleteBtn.onclick = async () => {
               if (!confirm("Delete this note?")) return;
