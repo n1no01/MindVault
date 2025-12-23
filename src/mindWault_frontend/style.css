@@ -102,6 +102,100 @@ body.dark-mode .note-status {
   letter-spacing: 1px;
 }
 
+.premium-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.premium-modal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.premium-modal-card {
+  position: relative;
+  max-width: 480px;
+  width: 100%;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+}
+
+.premium-section {
+  padding-bottom: 15px;
+  display: block;
+}
+
+.premium-description{
+  padding-bottom: 12px;
+  padding-top: 12px;
+}
+
+.premium-section label {
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.premium-section input {
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.premium-balance-row {
+  margin-top: 4px;
+}
+
+.premium-actions-buttons{
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  background-color: #111827;
+  color: #e5e7eb;
+}
+
+body.dark-mode .premium-modal-card {
+  background: #111827;
+  color: #e5e7eb;
+}
+
+body.dark-mode .premium-section input {
+  background: #020617;
+  border: 1px solid #374151;
+  color: #e5e7eb;
+}
+
+body.dark-mode .premium-actions button {
+  border: 1px solid #4b5563;
+  background: #ffffff;
+  color: #111827;
+}
+body.light-mode .premium-modal-card {
+  background: #ffffff;
+  color: #111827;
+}
+
+body.light-mode .premium-section input {
+  background: #f9fafb;
+  border: 1px solid #d1d5db;
+  color: #111827;
+}
+
+body.light-mode .premium-actions button {
+  border: 1px solid #d1d5db;
+  
+}
+
+
 /* Dark mode */
 body.dark .note-container input[type="text"] {
   color: #f5f5f5;
@@ -135,26 +229,6 @@ body.dark .note-status {
   color: #e0e0e0;
   transition: all 0.25s ease;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-}
-
-/* Hover & focus */
-#login:hover,
-#login-google:hover, #login-ii-20:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-}
-
-#login:focus,
-#login-google:focus, #login-ii-20:focus {
-  outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4);
-}
-
-/* Active click */
-#login:active,
-#login-google:active, #login-ii-20:active {
-  transform: scale(0.97);
 }
 
 /* Dark mode */
@@ -512,36 +586,6 @@ body.dark-mode nav {
 
 body.dark-mode #navbar-logo {
   content: url("./assets/mindvault-dark11.png");
-}
-
-.modal {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  text-align: center;
-}
-
-.modal.hidden {
-  display: none;
-}
-
-.modal button {
-  margin: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  border: none;
-  cursor: pointer;
-  border-radius: 6px;
 }
 
 /* Mobile responsiveness */
